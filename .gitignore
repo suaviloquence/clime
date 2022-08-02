@@ -1,2 +1,9 @@
 /target
-/get-locations/venv
+/.env
+/db.sqlite3*
+/web/node_modules
+/dataset/CSV*
+/dataset/*.xlsx
+/dataset/*.accdb
+/dataset/*.zip
+/dataset/*.csv

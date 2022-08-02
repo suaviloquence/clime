@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Units {
 	/// Standard units.
 	/// Unit of temperature: Kelvin

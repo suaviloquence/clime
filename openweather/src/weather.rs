@@ -1,23 +1,80 @@
 use chrono::{DateTime, Utc};
-use log::debug;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde_repr::Deserialize_repr;
 
 use crate::{
+	api_route,
 	units::{Speed, Temperature},
-	Client, Error, API_ENDPOINT,
+	Client, Coordinates, GET,
 };
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Coordinates {
-	#[serde(rename = "lon")]
-	pub longitude: f64,
-	#[serde(rename = "lat")]
-	pub latitude: f64,
+#[repr(u32)]
+#[derive(Debug, Deserialize_repr)]
+/// https://openweathermap.org/weather-conditions
+pub enum WeatherCondition {
+	ThunderstormLightRain = 200,
+	ThunderstormRain = 201,
+	ThunderstormHeavyRain = 202,
+	LightThunderstorm = 210,
+	Thunderstorm = 211,
+	HeavyThunderstorm = 212,
+	RaggedThunderstorm = 221,
+	ThunderstormLightDrizzle = 230,
+	ThunderstormDrizzle = 231,
+	ThunderstormHeavyDrizzle = 232,
+	LightIntensityDrizzle = 300,
+	Drizzle = 301,
+	HeavyIntensityDrizzle = 302,
+	LightIntensityDrizzleRain = 310,
+	DrizzleRain = 311,
+	HeavyIntensityDrizzleRain = 312,
+	ShowerRainAndDrizzle = 313,
+	HeavyShowerRainAndDrizzle = 314,
+	ShowerDrizzle = 321,
+	LightRain = 500,
+	ModerateRain = 501,
+	HeavyIntensityRain = 502,
+	VeryHeavyRain = 503,
+	ExtremeRain = 504,
+	FreezingRain = 511,
+	LightIntensityShowerRain = 521,
+	ShowerRain = 522,
+	RaggedShowerRain = 531,
+	LightSnow = 600,
+	Snow = 601,
+	HeavySnow = 602,
+	Sleet = 611,
+	LightShowerSleet = 612,
+	ShowerSleet = 613,
+	LightRainAndSnow = 615,
+	RainAndSnow = 616,
+	LightShowerSnow = 620,
+	ShowerSnow = 621,
+	HeavyShowerSnow = 622,
+	Mist = 701,
+	Smoke = 711,
+	Haze = 721,
+	SandDustWhirls = 731,
+	Fog = 741,
+	Sand = 751,
+	Dust = 761,
+	Ash = 762,
+	Squall = 771,
+	Tornado = 7781,
+	Clear = 800,
+	/// 11-25%
+	FewClouds = 801,
+	/// 25-50%
+	ScatteredClouds = 802,
+	/// 51-84%
+	BrokenClouds = 803,
+	/// 85-100% clouds
+	Overcast = 804,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct WeatherType {
-	pub id: u64,
+	pub id: WeatherCondition,
 	pub main: String,
 	pub description: String,
 	pub icon: String,
@@ -35,12 +92,14 @@ pub struct WeatherInfo {
 	pub temp_max: Temperature,
 	/// percent humidity
 	pub humidity: f32,
+	/// atmospheric pressure.  If [`sea_level_pressure`](#sea_level_pressure) and [`ground_level_pressure`](#ground_level_pressure) are `None`, this is measured at sea level.
+	pub pressure: f64,
 	/// atmospheric pressure at sea level, in hPa
-	#[serde(alias = "pressure")]
-	pub sea_level: f64,
+	#[serde(rename = "sea_level")]
+	pub sea_level_pressure: Option<f64>,
 	/// atmospheric pressure at ground level, in hPa,
 	#[serde(rename = "grnd_level")]
-	pub ground_level: Option<f64>,
+	pub ground_level_pressure: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -51,7 +110,7 @@ pub struct WindInfo {
 	#[serde(rename = "deg")]
 	pub direction: f32,
 	/// [gust](https://en.wikipedia.org/wiki/Wind_gust) of the wind
-	pub gust: Speed,
+	pub gust: Option<Speed>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -61,21 +120,21 @@ pub struct CloudInfo {
 	pub cloudiness: f32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct PrecipitationVolume {
 	/// precipitation volume for the last 1 hour, in millimeters
 	#[serde(rename = "1h")]
-	pub one_hour: f64,
+	pub one_hour: Option<f64>,
 	/// precipitation volume for the last 3 hours, in millimeters
 	#[serde(rename = "3h")]
-	pub three_hours: f64,
+	pub three_hours: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct SysInfo {
 	// TODO:  type: int, id: int, message: float?
 	/// country code
-	pub country: String,
+	pub country: Option<String>,
 	/// time of sunrise
 	#[serde(with = "chrono::serde::ts_seconds")]
 	pub sunrise: DateTime<Utc>,
@@ -87,14 +146,18 @@ pub struct SysInfo {
 #[derive(Debug, Deserialize)]
 pub struct WeatherResponse {
 	pub coord: Coordinates,
-	pub weather: WeatherType,
+	pub weather: Vec<WeatherType>,
+	/// info about main weather
+	pub main: WeatherInfo,
 	/// maximum visibility, in meters.  Max is 10 km (10,000 m)
 	pub visibility: f32,
 	pub wind: WindInfo,
 	pub clouds: CloudInfo,
 	/// rain volume
+	#[serde(default)]
 	pub rain: PrecipitationVolume,
 	/// snow volume
+	#[serde(default)]
 	pub snow: PrecipitationVolume,
 	/// time of data calculation (UTC)
 	#[serde(rename = "dt", with = "chrono::serde::ts_seconds")]
@@ -111,23 +174,13 @@ pub struct WeatherResponse {
 }
 
 impl Client {
-	pub async fn weather_at(&self, coordinates: &Coordinates) -> crate::Result<WeatherResponse> {
-		debug!(
-			"{}",
-			serde_json::to_string_pretty(
-				&self
-					.add_options(self.client.get(format!("{}/weather", API_ENDPOINT)))
-					.query(&[("appid", &self.api_key)])
-					.query(coordinates)
-					.send()
-					.await
-					.map_err(Error::Request)?
-					.json::<serde_json::Value>()
-					.await
-					.map_err(Error::Request)?
-			)
-			.unwrap()
-		);
-		panic!();
+	api_route! {
+		/// Find the weather at the given coordinates.
+		GET "/weather" pub weather_at(coordinates: Coordinates) -> WeatherResponse;
+	}
+
+	api_route! {
+		/// Find the weather in an area with a given latitude and longitude
+		GET "/weather" pub weather(#[to_string] lat: f64, #[to_string] lon: f64) -> WeatherResponse;
 	}
 }

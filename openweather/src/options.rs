@@ -2,13 +2,13 @@ use reqwest::RequestBuilder;
 
 use crate::{Client, Units};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Options {
 	pub units: Units,
 	pub lang: Language,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Language {
 	Afrikaans,
 	Albanian,
@@ -122,6 +122,7 @@ impl Client {
 		builder.query::<[(_, &str)]>(&[
 			("lang", From::from(&self.options.lang)),
 			("units", From::from(&self.options.units)),
+			("appid", &self.api_key),
 		])
 	}
 }

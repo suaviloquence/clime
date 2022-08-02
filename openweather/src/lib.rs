@@ -1,8 +1,11 @@
-use reqwest::header::HeaderValue;
+use log::error;
+use reqwest::{header::HeaderValue, Method, RequestBuilder, StatusCode};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
+mod forecast;
 mod options;
 pub mod units;
-mod weather;
+pub(crate) mod weather;
 
 pub use options::{Language, Options};
 pub use units::Units;
@@ -13,13 +16,25 @@ static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_V
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-	#[error("Error in HTTP request")]
+	#[error("Error in HTTP request: {0}")]
 	Request(reqwest::Error),
+	#[error("Too many requests (ran out of API quota)")]
+	TooManyRequests,
 }
+
+pub(crate) const GET: Method = Method::GET;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Coordinates {
+	#[serde(rename = "lon")]
+	pub longitude: f64,
+	#[serde(rename = "lat")]
+	pub latitude: f64,
+}
+
+#[derive(Debug, Clone)]
 pub struct Client {
 	api_key: String,
 	client: reqwest::Client,
@@ -44,28 +59,64 @@ impl Client {
 			options: options.unwrap_or_default(),
 		}
 	}
-}
 
-#[cfg(test)]
-mod tests {
-	use crate::{weather::Coordinates, Client};
-
-	#[tokio::test]
-	async fn req() {
-		std::env::set_var("RUST_LOG", "trace");
-		env_logger::init();
-		let client = Client::new(std::env::var("API_KEY").unwrap(), Default::default(), None);
-
-		println!(
-			"{:?}",
-			client
-				.weather_at(&Coordinates {
-					latitude: 37.3,
-					longitude: -121.8
-				})
-				.await
+	fn build(
+		&self,
+		method: Method,
+		route: &'static str,
+		params: Option<&[(&str, &str)]>,
+	) -> RequestBuilder {
+		let builder = self.add_options(
+			self.client
+				.request(method, format!("{}{}", API_ENDPOINT, route)),
 		);
 
-		panic!()
+		if let Some(params) = params {
+			builder.query(params)
+		} else {
+			builder
+		}
+	}
+
+	async fn handle_response<Res: DeserializeOwned>(&self, builder: RequestBuilder) -> Result<Res> {
+		builder
+			.send()
+			.await
+			.map_err(Error::Request)?
+			.error_for_status()
+			.map_err(|err| match err.status() {
+				Some(StatusCode::TOO_MANY_REQUESTS) => {
+					error!("API query limit reached.");
+					Error::TooManyRequests
+				}
+				status => {
+					error!("Request failed with status {}", status.unwrap_or_default());
+					Error::Request(err)
+				}
+			})?
+			.json()
+			.await
+			.map_err(Error::Request)
 	}
 }
+
+macro_rules! api_route {
+	{
+		$(#[$meta:meta])*
+		$method:ident $route:literal $vis:vis $name:ident($(#[to_string] $str:ident: $T:ident$(, )?)*$($serarg:ident: $S:ident$(, )?)*) -> $type:ident;
+	} => {
+			$(#[$meta])*
+			$vis async fn $name(&self$(, $str: $T)*$(, $serarg: &$S)*) -> crate::Result<$type> {
+				self.handle_response(
+					self.build($method, $route, Some(&[$(
+						(stringify!($str), &$str.to_string()),
+					)*]))
+					$(
+						.query($serarg)
+					)*
+				).await
+			}
+	};
+}
+
+pub(crate) use api_route;
