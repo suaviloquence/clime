@@ -23,11 +23,14 @@ reqwest = { version = "0.11", features = ["json"] }
 
 sqlx = { version = "0.6", features = ["runtime-actix-native-tls", "macros", "chrono", "uuid"] }
 
-openweather = { path = "./openweather" }
 jsonwebtoken = "8.1.1"
 futures-util = "0.3.21"
 uuid = {version = "1.1.2", features = ["v4", "serde"]}
 lazy_static = "1.4.0"
+rust-argon2 = "1.0"
+
+openweather = { path = "./openweather" }
+rand = "0.8.5"
 
 [features]
 default = ["sqlite"]

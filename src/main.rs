@@ -20,6 +20,11 @@ fn get_env(name: &str) -> anyhow::Result<String> {
 	env::var(name).with_context(|| format!("Error loading environment variable {}.", name))
 }
 
+lazy_static! {
+	// argon2::Config borrows this, and it needs to be 'static
+	static ref PASSWORD_SECRET: String = get_env("PASSWORD_SECRET").unwrap();
+}
+
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
 	dotenv::dotenv().context("Error loading .env file.")?;
@@ -39,6 +44,11 @@ async fn main() -> anyhow::Result<()> {
 
 	let client = Client::new(get_env("OPENWEATHER_API_KEY")?, None, None);
 
+	let argon2_config = argon2::Config {
+		secret: PASSWORD_SECRET.as_bytes(),
+		..Default::default()
+	};
+
 	WeatherUpdater {
 		con: con.clone(),
 		client: client.clone(),
@@ -56,6 +66,7 @@ async fn main() -> anyhow::Result<()> {
 			.app_data(web::Data::new(client.clone()))
 			.app_data(web::Data::new(encoder.clone()))
 			.app_data(web::Data::new(decoder.clone()))
+			.app_data(web::Data::new(argon2_config.clone()))
 			.service(web::scope("api").configure(api::configure))
 			.service(Files::new("/static", "./static"))
 			.default_service(web::to(|| NamedFile::open_async("./static/index.html")))

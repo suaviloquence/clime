@@ -1,0 +1,7 @@
+- [x] password authentication
+  - [x] add endpoint to check if username is used already
+  - [ ] password resets?
+- [ ] styles
+- [ ] deadlines
+- [ ] unit, timezone preferences
+- [ ] no-login mode (store prefs in local storage)

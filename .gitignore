@@ -7,3 +7,4 @@
 /dataset/*.accdb
 /dataset/*.zip
 /dataset/*.csv
+/static/app.js

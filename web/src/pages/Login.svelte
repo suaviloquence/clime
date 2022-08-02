@@ -9,8 +9,9 @@
 
   export let mode: "login" | "create";
 
-  let id: string;
   let name: string;
+  let username: string;
+  let password: string;
 
   let disabled = false;
 
@@ -20,7 +21,10 @@
     evt.preventDefault();
     disabled = true;
 
-    let body = mode === "login" ? { id } : { metadata: { name } };
+    let body =
+      mode === "login"
+        ? { username, password }
+        : { metadata: { name, username }, password };
 
     let res = await fetch(`/api/user/${mode}`, {
       method: "POST",
@@ -45,20 +49,54 @@
   function swap() {
     mode = mode === "create" ? "login" : "create";
   }
+
+  let available: Promise<boolean>;
+
+  function checkAvailable() {
+    available = fetch(
+      "/api/user/check?" + new URLSearchParams({ username })
+    ).then((res) => res.json());
+  }
 </script>
 
 <form on:submit={submit}>
-  {#if mode === "login"}
-    <div>
-      <label for="id">ID: </label>
-      <input type="text" bind:value={id} id="id" required />
-    </div>
-  {:else}
+  {#if mode === "create"}
     <div>
       <label for="name">Name: </label>
       <input type="text" bind:value={name} id="name" required />
     </div>
   {/if}
+  <div>
+    <label for="username-username">Username: </label>
+    <input
+      type="text"
+      bind:value={username}
+      on:change={checkAvailable}
+      id="login-username"
+      required
+    />
+    {#if mode === "create"}
+      {#await available}
+        Checking...
+      {:then available}
+        {#if available}
+          Available
+        {:else}
+          Not available
+        {/if}
+      {/await}
+    {/if}
+  </div>
+  <div>
+    <label for="password">Password: </label>
+    <input
+      type="password"
+      bind:value={password}
+      minlength="8"
+      id="login-password"
+      required
+    />
+  </div>
 
   {#if error}
     <p class="error">{error}</p>

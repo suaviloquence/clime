@@ -7,11 +7,12 @@ use actix_web::{
 	web::{self, ServiceConfig},
 	HttpMessage, HttpRequest, HttpResponse,
 };
+use rand::Rng;
 
 use crate::{
 	db::Pool,
 	models::{
-		user::{Metadata, User},
+		user::{Authentication, Metadata, User},
 		Load,
 	},
 };
@@ -56,6 +57,7 @@ async fn get(con: web::Data<Pool>, req: HttpRequest) -> Response {
 #[derive(Debug, Deserialize)]
 struct Signup {
 	metadata: Metadata,
+	password: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -75,30 +77,95 @@ fn create_jwt(uid: Uuid, key: &EncodingKey) -> Response {
 async fn create(
 	con: web::Data<Pool>,
 	key: web::Data<EncodingKey>,
+	config: web::Data<argon2::Config<'static>>,
 	data: web::Json<Signup>,
 ) -> Response {
-	User::create(Arc::clone(&con), data.0.metadata)
+	if data.metadata.username.is_empty() || data.metadata.name.is_empty() || data.password.len() < 8
+	{
+		return Err(ErrorBadRequest("username, name must be at least one character and password mut be at least 8 characters"));
+	}
+
+	sqlx::query!(
+		"SELECT username FROM users WHERE username = $1",
+		data.metadata.username
+	)
+	.fetch_optional(con.as_ref())
+	.await
+	.map_err(ErrorInternalServerError)
+	.and_then(|opt| {
+		if opt.is_none() {
+			Ok(())
+		} else {
+			Err(ErrorBadRequest("user already exists"))
+		}
+	})?;
+
+	let user = User::create(Arc::clone(&con), data.0.metadata)
 		.await
-		.map_err(ErrorInternalServerError)
-		.and_then(|user| create_jwt(user.id, &key))
+		.map_err(ErrorInternalServerError)?;
+
+	let mut salt = [0u8; 16];
+
+	rand::thread_rng().fill(&mut salt);
+
+	let salt = salt.to_vec();
+
+	let hash = argon2::hash_raw(data.0.password.as_bytes(), &salt, &config)
+		.map_err(ErrorInternalServerError)?;
+
+	Authentication {
+		username: user.username.clone(),
+		hash,
+		salt,
+	}
+	.put(Arc::clone(&con))
+	.await
+	.map_err(ErrorInternalServerError)?;
+
+	create_jwt(user.id, &key)
 }
 
 #[derive(Debug, Deserialize)]
 struct Login {
-	id: Uuid,
+	username: String,
+	password: String,
 }
 
 async fn login(
 	con: web::Data<Pool>,
 	key: web::Data<EncodingKey>,
+	config: web::Data<argon2::Config<'static>>,
 	data: web::Json<Login>,
 ) -> Response {
-	// TODO check auth
-	User::load(Arc::clone(&con), data.0.id)
+	if data.username.is_empty() || data.password.is_empty() {
+		return Err(ErrorBadRequest("username and password cannot be empty"));
+	}
+
+	Authentication::load(Arc::clone(&con), data.0.username.clone())
 		.await
 		.map_err(ErrorInternalServerError)
-		.and_then(|option| option.ok_or_else(|| ErrorNotFound("user not found")))
-		.and_then(|user| create_jwt(user.id, &key))
+		.and_then(|opt| opt.ok_or_else(|| ErrorNotFound("user not found")))
+		.and_then(|auth| {
+			argon2::verify_raw(data.password.as_bytes(), &auth.salt, &auth.hash, &config)
+				.map_err(ErrorInternalServerError)
+		})
+		.and_then(|val| {
+			if val {
+				Ok(async move {
+					sqlx::query!(
+						r#"SELECT id as "id: Uuid" FROM users WHERE username = $1"#,
+						data.0.username
+					)
+					.fetch_one(con.as_ref())
+					.await
+					.map_err(ErrorInternalServerError)
+				})
+			} else {
+				Err(ErrorUnauthorized("invalid password"))
+			}
+		})?
+		.await
+		.and_then(|row| create_jwt(row.id, &key))
 }
 
 #[derive(Debug, Deserialize)]
@@ -163,9 +230,30 @@ async fn delete_university(
 	.map(|_| HttpResponse::Ok().body(()))
 }
 
+#[derive(Debug, Deserialize)]
+struct UsernameQuery {
+	username: String,
+}
+
+async fn username_available(con: web::Data<Pool>, query: web::Query<UsernameQuery>) -> Response {
+	if query.username.is_empty() {
+		return Err(ErrorBadRequest("username cannot be empty"));
+	}
+
+	sqlx::query!(
+		"SELECT username FROM users WHERE username = $1",
+		query.username
+	)
+	.fetch_optional(con.as_ref())
+	.await
+	.map_err(ErrorInternalServerError)
+	.map(|opt| HttpResponse::Ok().json(opt.is_none()))
+}
+
 pub(super) fn configure(cfg: &mut ServiceConfig) {
 	cfg.service(web::resource("/create").route(web::post().to(create)))
 		.service(web::resource("/login").route(web::post().to(login)))
+		.service(web::resource("/check").route(web::get().to(username_available)))
 		.service(
 			web::scope("/me")
 				.wrap_fn(|req, srv| {
