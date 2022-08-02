@@ -76,14 +76,14 @@ async fn weather(
 		.await
 		.map_err(ErrorInternalServerError)?
 		.into_iter()
-		.enumerate()
-		.filter(|(i, data)| {
+		.zip(1i64..)
+		.filter(|(data, i)| {
 			Utc::now()
 				.naive_utc()
 				.signed_duration_since(data.time)
-				.num_hours() <= *i as i64 + 1
+				.num_hours() <= *i
 		})
-		.map(|(_, data)| data)
+		.map(|(data, _)| data)
 		.collect();
 
 	if weather.is_empty() {
