@@ -1,24 +1,19 @@
-<script lang="ts">
+<script context="module" lang="ts">
   import { type Readable, derived } from "svelte/store";
   import { user } from "../pages/UserInfo.svelte";
-  import type { Weather } from "../models";
-  import { onMount } from "svelte";
 
-  export let weather: Weather;
-  export let name: string | null = null;
-
-  let units: Readable<"imperial" | "metric"> = derived(
+  export const units: Readable<"imperial" | "metric"> = derived(
     user,
     (pms, set) => {
       pms.then((user) => {
         if (user) set(user.metadata.units);
         else set("imperial");
       });
-    }
-    // "imperial"
+    },
+    "imperial" as "imperial" | "metric"
   );
 
-  function convertTemperature(
+  export function convertTemperature(
     kelvin: number,
     units: "imperial" | "metric"
   ): string {
@@ -27,7 +22,10 @@
     if (units === "imperial") return (celsius * 1.8 + 32).toFixed(1) + "°F";
   }
 
-  function convertSpeed(mps: number, units: "imperial" | "metric"): string {
+  export function convertSpeed(
+    mps: number,
+    units: "imperial" | "metric"
+  ): string {
     if (units === "metric") return mps.toFixed(1) + " m/s";
     if (units === "imperial") return (mps * 2.237).toFixed(1) + " mph";
   }
@@ -37,9 +35,16 @@
     hour: "numeric",
   });
 
-  function formatDate(date: Date): string {
+  export function formatDate(date: Date): string {
     return fmt.format(date);
   }
+</script>
+
+<script lang="ts">
+  import type { Weather } from "../models";
+
+  export let weather: Weather;
+  export let name: string | null = null;
 </script>
 
 <h3>
