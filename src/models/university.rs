@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use serde::Serialize;
 
 use crate::db::Pool;
@@ -64,7 +62,7 @@ pub struct University {
 }
 
 impl Load for University {
-	type Connection = Arc<Pool>;
+	type Connection = Pool;
 	type ID = i64;
 	type Error = sqlx::Error;
 
@@ -74,7 +72,7 @@ impl Load for University {
 	) -> futures_util::future::BoxFuture<'static, Result<Option<Self>, Self::Error>> {
 		Box::pin(async move {
 			sqlx::query_as!(Self, "SELECT * FROM universities WHERE id = $1", id)
-				.fetch_optional(con.as_ref())
+				.fetch_optional(&con)
 				.await
 		})
 	}

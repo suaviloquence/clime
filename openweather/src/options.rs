@@ -1,6 +1,6 @@
 use reqwest::RequestBuilder;
 
-use crate::{Client, Units};
+use crate::{ClientInner, Units};
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Options {
@@ -117,7 +117,7 @@ impl Default for Language {
 	}
 }
 
-impl Client {
+impl ClientInner {
 	pub(crate) fn add_options(&self, builder: RequestBuilder) -> RequestBuilder {
 		builder.query::<[(_, &str)]>(&[
 			("lang", From::from(&self.options.lang)),

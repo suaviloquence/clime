@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use futures_util::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -57,7 +55,7 @@ impl Load for Metadata {
 
 	type Error = sqlx::Error;
 
-	type Connection = Arc<Pool>;
+	type Connection = Pool;
 
 	fn load(
 		con: Self::Connection,
@@ -65,7 +63,7 @@ impl Load for Metadata {
 	) -> BoxFuture<'static, Result<Option<Self>, Self::Error>> {
 		Box::pin(async move {
 			sqlx::query!("SELECT * FROM users WHERE id = $1", id)
-				.fetch_optional(con.as_ref())
+				.fetch_optional(&con)
 				.await
 				.map(|opt| {
 					opt.map(|row| Self {
@@ -80,7 +78,7 @@ impl Load for Metadata {
 }
 
 impl Load for User {
-	type Connection = Arc<Pool>;
+	type Connection = Pool;
 	type ID = Uuid;
 	type Error = sqlx::Error;
 
@@ -89,14 +87,14 @@ impl Load for User {
 		id: Self::ID,
 	) -> BoxFuture<'static, Result<Option<Self>, Self::Error>> {
 		Box::pin(async move {
-			let metadata = Metadata::load(Arc::clone(&con), id).await?;
+			let metadata = Metadata::load(con.clone(), id).await?;
 
 			if let Some(metadata) = metadata {
 				let universities = sqlx::query!(
 					"SELECT university_id FROM get_weather WHERE user_id = $1",
 					id
 				)
-				.fetch_all(con.as_ref())
+				.fetch_all(&con)
 				.await?
 				.into_iter()
 				.map(|row| row.university_id)
@@ -114,7 +112,7 @@ impl Load for User {
 }
 
 impl User {
-	pub async fn create(con: Arc<Pool>, metadata: Metadata) -> sqlx::Result<Self> {
+	pub async fn create(con: Pool, metadata: Metadata) -> sqlx::Result<Self> {
 		let id = Uuid::new_v4();
 
 		let units = metadata.units.as_str();
@@ -126,7 +124,7 @@ impl User {
 			units,
 			metadata.timezone,
 		)
-		.execute(con.as_ref())
+		.execute(&con)
 		.await
 		.map(|_| Self {
 			id,
@@ -135,7 +133,7 @@ impl User {
 		})
 	}
 
-	pub async fn update(&self, con: Arc<Pool>) -> sqlx::Result<()> {
+	pub async fn update(&self, con: Pool) -> sqlx::Result<()> {
 		let units = self.metadata.units.as_str();
 		sqlx::query!(
 			"UPDATE users SET (name, username, units, timezone) = ($1, $2, $3, $4) WHERE id = $5",
@@ -145,7 +143,7 @@ impl User {
 			self.metadata.timezone,
 			self.id
 		)
-		.execute(con.as_ref())
+		.execute(&con)
 		.await
 		.map(|_| ())
 	}
@@ -163,7 +161,7 @@ impl Load for Authentication {
 
 	type Error = sqlx::Error;
 
-	type Connection = Arc<Pool>;
+	type Connection = Pool;
 
 	fn load(
 		con: Self::Connection,
@@ -171,21 +169,21 @@ impl Load for Authentication {
 	) -> BoxFuture<'static, Result<Option<Self>, Self::Error>> {
 		Box::pin(async move {
 			sqlx::query_as!(Self, "SELECT * FROM authentication WHERE username = $1", id)
-				.fetch_optional(con.as_ref())
+				.fetch_optional(&con)
 				.await
 		})
 	}
 }
 
 impl Authentication {
-	pub async fn put(&self, con: Arc<Pool>) -> sqlx::Result<()> {
+	pub async fn put(&self, con: Pool) -> sqlx::Result<()> {
 		sqlx::query!(
 			"INSERT INTO authentication (username, hash, salt) VALUES ($1, $2, $3)",
 			self.username,
 			self.hash,
 			self.salt
 		)
-		.execute(con.as_ref())
+		.execute(&con)
 		.await
 		.map(|_| ())
 	}

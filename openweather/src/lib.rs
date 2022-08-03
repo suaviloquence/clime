@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use log::error;
 use reqwest::{header::HeaderValue, Method, RequestBuilder, StatusCode};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -35,8 +37,12 @@ pub struct Coordinates {
 }
 
 #[derive(Debug, Clone)]
-pub struct Client {
+pub struct Client(Arc<ClientInner>);
+
+#[derive(Debug)]
+struct ClientInner {
 	api_key: String,
+	// this is double-`Arc`'d, but I don't know how to do it another way...
 	client: reqwest::Client,
 	options: Options,
 }
@@ -53,11 +59,11 @@ impl Client {
 			// operations above should be infallible
 			.unwrap();
 
-		Self {
+		Self(Arc::new(ClientInner {
 			api_key,
 			client,
 			options: options.unwrap_or_default(),
-		}
+		}))
 	}
 
 	fn build(
@@ -66,8 +72,9 @@ impl Client {
 		route: &'static str,
 		params: Option<&[(&str, &str)]>,
 	) -> RequestBuilder {
-		let builder = self.add_options(
-			self.client
+		let builder = self.0.add_options(
+			self.0
+				.client
 				.request(method, format!("{}{}", API_ENDPOINT, route)),
 		);
 

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use actix_web::{
 	error::{ErrorInternalServerError, ErrorNotFound},
 	web::{self, ServiceConfig},
@@ -25,7 +23,7 @@ async fn get_university(
 	con: &web::Data<Pool>,
 	params: web::Path<IdParams>,
 ) -> actix_web::Result<University> {
-	match University::load(Arc::clone(con), params.id).await {
+	match University::load(Pool::clone(&con), params.id).await {
 		Ok(Some(univ)) => Ok(univ),
 		Ok(None) => Err(ErrorNotFound("university not found")),
 		Err(err) => Err(ErrorInternalServerError(err)),

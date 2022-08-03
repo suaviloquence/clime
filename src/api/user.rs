@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use actix_web::{
 	dev::Service,
 	error::{ErrorBadRequest, ErrorInternalServerError, ErrorNotFound, ErrorUnauthorized},
@@ -47,7 +45,7 @@ fn get_uid(req: &HttpRequest) -> Uuid {
 async fn get(con: web::Data<Pool>, req: HttpRequest) -> Response {
 	let uid = get_uid(&req);
 
-	User::load(Arc::clone(&con), uid)
+	User::load(Pool::clone(&con), uid)
 		.await
 		.map_err(ErrorInternalServerError)
 		.and_then(|user| user.ok_or_else(|| ErrorUnauthorized("user not found")))
@@ -60,7 +58,7 @@ async fn update(con: web::Data<Pool>, req: HttpRequest, metadata: web::Json<Meta
 	}
 
 	let uid = get_uid(&req);
-	let mut user = User::load(Arc::clone(&con), uid)
+	let mut user = User::load(Pool::clone(&con), uid)
 		.await
 		.map_err(ErrorInternalServerError)
 		.and_then(|opt| opt.ok_or_else(|| ErrorUnauthorized("user not found")))?;
@@ -80,7 +78,7 @@ async fn update(con: web::Data<Pool>, req: HttpRequest, metadata: web::Json<Meta
 	}
 
 	user.metadata = metadata.0;
-	user.update(Arc::clone(&con))
+	user.update(Pool::clone(&con))
 		.await
 		.map_err(ErrorInternalServerError)
 		.map(|_| HttpResponse::Ok().body(()))
@@ -132,7 +130,7 @@ async fn create(
 		}
 	})?;
 
-	let user = User::create(Arc::clone(&con), data.0.metadata)
+	let user = User::create(Pool::clone(&con), data.0.metadata)
 		.await
 		.map_err(ErrorInternalServerError)?;
 
@@ -150,7 +148,7 @@ async fn create(
 		hash,
 		salt,
 	}
-	.put(Arc::clone(&con))
+	.put(Pool::clone(&con))
 	.await
 	.map_err(ErrorInternalServerError)?;
 
@@ -173,7 +171,7 @@ async fn login(
 		return Err(ErrorBadRequest("username and password cannot be empty"));
 	}
 
-	Authentication::load(Arc::clone(&con), data.0.username.clone())
+	Authentication::load(Pool::clone(&con), data.0.username.clone())
 		.await
 		.map_err(ErrorInternalServerError)
 		.and_then(|opt| opt.ok_or_else(|| ErrorNotFound("user not found")))
@@ -208,14 +206,14 @@ struct UpdateUniv {
 async fn get_universities(con: web::Data<Pool>, req: HttpRequest) -> Response {
 	let uid = get_uid(&req);
 
-	let user = User::load(Arc::clone(&con), uid)
+	let user = User::load(Pool::clone(&con), uid)
 		.await
 		.map_err(ErrorInternalServerError)?
 		.ok_or_else(|| ErrorUnauthorized("user not found"))?;
 
 	let universities = user
 		.universities
-		.load(Arc::clone(&con))
+		.load(Pool::clone(&con))
 		.await
 		.map_err(ErrorInternalServerError)?
 		.ok_or_else(|| ErrorInternalServerError("university not found"))?;
