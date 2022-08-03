@@ -50,8 +50,40 @@ async fn get(con: web::Data<Pool>, req: HttpRequest) -> Response {
 	User::load(Arc::clone(&con), uid)
 		.await
 		.map_err(ErrorInternalServerError)
-		.and_then(|user| user.ok_or_else(|| ErrorNotFound("user not found")))
+		.and_then(|user| user.ok_or_else(|| ErrorUnauthorized("user not found")))
 		.map(|user| HttpResponse::Ok().json(user))
+}
+
+async fn update(con: web::Data<Pool>, req: HttpRequest, metadata: web::Json<Metadata>) -> Response {
+	if metadata.username.is_empty() {
+		return Err(ErrorBadRequest("username is required"));
+	}
+
+	let uid = get_uid(&req);
+	let mut user = User::load(Arc::clone(&con), uid)
+		.await
+		.map_err(ErrorInternalServerError)
+		.and_then(|opt| opt.ok_or_else(|| ErrorUnauthorized("user not found")))?;
+
+	if user.metadata.username != metadata.username {
+		let existing = sqlx::query!(
+			"SELECT username FROM users WHERE username = $1",
+			metadata.username
+		)
+		.fetch_optional(con.as_ref())
+		.await
+		.map_err(ErrorInternalServerError)?;
+
+		if existing.is_some() {
+			return Err(ErrorBadRequest("user already exists"));
+		}
+	}
+
+	user.metadata = metadata.0;
+	user.update(Arc::clone(&con))
+		.await
+		.map_err(ErrorInternalServerError)
+		.map(|_| HttpResponse::Ok().body(()))
 }
 
 #[derive(Debug, Deserialize)]
@@ -114,7 +146,7 @@ async fn create(
 		.map_err(ErrorInternalServerError)?;
 
 	Authentication {
-		username: user.username.clone(),
+		username: user.metadata.username.clone(),
 		hash,
 		salt,
 	}
@@ -282,7 +314,11 @@ pub(super) fn configure(cfg: &mut ServiceConfig) {
 						fut.await
 					}
 				})
-				.service(web::resource("").route(web::get().to(get)))
+				.service(
+					web::resource("")
+						.route(web::get().to(get))
+						.route(web::put().to(update)),
+				)
 				.service(
 					web::resource("/universities")
 						.route(web::get().to(get_universities))

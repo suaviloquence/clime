@@ -6,7 +6,7 @@
     derived,
   } from "svelte/store";
 
-  import type { JwtInfo, User } from "../models";
+  import type { JwtInfo, User, UserMetadata } from "../models";
 
   let jwt: string | null = localStorage.getItem("jwt");
   let exps = localStorage.getItem("exp");
@@ -95,15 +95,82 @@
     $path = "/user/login";
   }
 
+  let metadata: UserMetadata;
   onMount(async () => {
     if (!(await $user)) {
       updateUser($auth.jwt);
     }
   });
+
+  let edit = false;
+
+  async function startEditing() {
+    metadata = { ...(await $user).metadata };
+    edit = true;
+  }
+
+  async function update() {
+    await $authedFetch("/api/user/me", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(metadata),
+    });
+
+    (await $user).metadata = metadata;
+    edit = false;
+  }
 </script>
 
 {#await $user}
   Loading user...
 {:then user}
-  Hello, {user.name}
+  Hello, {user.metadata.name}
+
+  <h3>Settings</h3>
+  <div>
+    <label for="username">Username: </label>
+    {#if edit}
+      <input id="username" required bind:value={metadata.username} />
+    {:else}
+      <span id="username">{user.metadata.username}</span>
+    {/if}
+  </div>
+  <div>
+    <label for="name">Name: </label>
+    {#if edit}
+      <input id="name" bind:value={metadata.name} />
+    {:else}
+      <span id="name">{user.metadata.name}</span>
+    {/if}
+  </div>
+  <div>
+    <label for="units">Units: </label>
+    {#if edit}
+      {#each ["imperial", "metric"] as unit}
+        <div>
+          <input
+            type="radio"
+            name="units"
+            bind:group={metadata.units}
+            id={unit}
+            value={unit}
+          />
+          <label for={unit}>{unit}</label>
+        </div>
+      {/each}
+    {:else}
+      <span id="units">{user.metadata.units}</span>
+    {/if}
+  </div>
+  <!-- TODO: timezone -->
+  <div>
+    {#if edit}
+      <button on:click={update}>Update</button>
+      <button on:click={() => (edit = false)}>Cancel</button>
+    {:else}
+      <button on:click={startEditing}>Edit</button>
+    {/if}
+  </div>
 {/await}

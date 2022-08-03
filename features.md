@@ -1,7 +1,11 @@
 - [x] password authentication
   - [x] add endpoint to check if username is used already
+  - [ ] change password
   - [ ] password resets?
 - [ ] styles
 - [ ] deadlines
 - [ ] unit, timezone preferences
 - [ ] no-login mode (store prefs in local storage)
+- [ ] forecasts
+- [ ] what was/will be the weather at this point in time
+  - if user's time is 5 PST, report weather for new york at 5 EST

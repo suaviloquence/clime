@@ -30,7 +30,7 @@
 {#await $user}
   Loading dashboard...
 {:then user}
-  <h2>Good morning, {user.name}</h2>
+  <h2>Good morning, {user.metadata.name}</h2>
   {#if !universities}
     Loading universities...
   {:else}

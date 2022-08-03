@@ -12,6 +12,7 @@
   let name: string;
   let username: string;
   let password: string;
+  let units: "imperial" | "metric" = "imperial";
 
   let disabled = false;
 
@@ -24,7 +25,7 @@
     let body =
       mode === "login"
         ? { username, password }
-        : { metadata: { name, username }, password };
+        : { metadata: { name, username, units }, password };
 
     let res = await fetch(`/api/user/${mode}`, {
       method: "POST",
@@ -65,14 +66,29 @@
       <label for="name">Name: </label>
       <input type="text" bind:value={name} id="name" required />
     </div>
+    <div>
+      Units:
+      {#each ["imperial", "metric"] as unit}
+        <div>
+          <input
+            type="radio"
+            name="units"
+            bind:group={units}
+            id={unit}
+            value={unit}
+          />
+          <label for={unit}>{unit}</label>
+        </div>
+      {/each}
+    </div>
   {/if}
   <div>
-    <label for="username-username">Username: </label>
+    <label for="username">Username: </label>
     <input
       type="text"
       bind:value={username}
       on:change={checkAvailable}
-      id="login-username"
+      id="username"
       required
     />
     {#if mode === "create"}
@@ -93,7 +109,7 @@
       type="password"
       bind:value={password}
       minlength="8"
-      id="login-password"
+      id="password"
       required
     />
   </div>

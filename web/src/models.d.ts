@@ -67,9 +67,15 @@ export interface Weather {
 
 export interface User {
   id: string;
-  username: string;
-  name: string;
+  metadata: UserMetadata;
   universities: number[];
+}
+
+export interface UserMetadata {
+  name: string;
+  username: string;
+  units: "imperial" | "metric";
+  timezone?: number;
 }
 
 export interface JwtInfo {
