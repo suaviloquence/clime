@@ -1,7 +1,7 @@
 use actix_web::{
 	error::{ErrorInternalServerError, ErrorNotFound},
 	web::{self, ServiceConfig},
-	HttpResponse,
+	HttpResponse, Responder, Result,
 };
 use chrono::Utc;
 use openweather::Client;
@@ -12,17 +12,12 @@ use crate::{
 	models::{university::University, weather::Weather, Load},
 };
 
-use super::Response;
-
 #[derive(Debug, Deserialize)]
 pub struct IdParams {
 	id: i64,
 }
 
-async fn get_university(
-	con: &web::Data<Pool>,
-	params: web::Path<IdParams>,
-) -> actix_web::Result<University> {
+async fn get_university(con: &web::Data<Pool>, params: web::Path<IdParams>) -> Result<University> {
 	match University::load(Pool::clone(&con), params.id).await {
 		Ok(Some(univ)) => Ok(univ),
 		Ok(None) => Err(ErrorNotFound("university not found")),
@@ -30,7 +25,7 @@ async fn get_university(
 	}
 }
 
-async fn get(con: web::Data<Pool>, params: web::Path<IdParams>) -> Response {
+async fn get(con: web::Data<Pool>, params: web::Path<IdParams>) -> Result<impl Responder> {
 	let university = get_university(&con, params).await?;
 
 	Ok(HttpResponse::Ok().json(university))
@@ -47,7 +42,7 @@ pub struct SearchUniv {
 	name: String,
 }
 
-async fn search(con: web::Data<Pool>, query: web::Query<SearchParams>) -> Response {
+async fn search(con: web::Data<Pool>, query: web::Query<SearchParams>) -> Result<impl Responder> {
 	// like ignores case by default (in sqlite)
 	// TODO: look into using COLLATE to guarantee this?
 	let matches = sqlx::query_as!(
@@ -69,7 +64,7 @@ async fn weather(
 	con: web::Data<Pool>,
 	client: web::Data<Client>,
 	params: web::Path<IdParams>,
-) -> Response {
+) -> Result<impl Responder> {
 	let mut weather: Vec<_> = Weather::get_most_recent(&con, params.id, 4)
 		.await
 		.map_err(ErrorInternalServerError)?

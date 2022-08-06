@@ -3,7 +3,7 @@ use actix_web::{
 	error::{ErrorBadRequest, ErrorInternalServerError, ErrorNotFound, ErrorUnauthorized},
 	http::header::AUTHORIZATION,
 	web::{self, ServiceConfig},
-	HttpMessage, HttpRequest, HttpResponse,
+	HttpMessage, HttpRequest, HttpResponse, Responder, Result,
 };
 use rand::Rng;
 
@@ -18,8 +18,6 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-
-use super::Response;
 
 const ALGORITHM: Algorithm = Algorithm::HS256;
 
@@ -42,7 +40,7 @@ fn get_uid(req: &HttpRequest) -> Uuid {
 	*req.extensions().get().unwrap()
 }
 
-async fn get(con: web::Data<Pool>, req: HttpRequest) -> Response {
+async fn get(con: web::Data<Pool>, req: HttpRequest) -> Result<impl Responder> {
 	let uid = get_uid(&req);
 
 	User::load(Pool::clone(&con), uid)
@@ -52,7 +50,11 @@ async fn get(con: web::Data<Pool>, req: HttpRequest) -> Response {
 		.map(|user| HttpResponse::Ok().json(user))
 }
 
-async fn update(con: web::Data<Pool>, req: HttpRequest, metadata: web::Json<Metadata>) -> Response {
+async fn update(
+	con: web::Data<Pool>,
+	req: HttpRequest,
+	metadata: web::Json<Metadata>,
+) -> Result<impl Responder> {
 	if metadata.username.is_empty() {
 		return Err(ErrorBadRequest("username is required"));
 	}
@@ -96,7 +98,7 @@ struct JwtResponse {
 	exp: usize,
 }
 
-fn create_jwt(uid: Uuid, key: &EncodingKey) -> Response {
+fn create_jwt(uid: Uuid, key: &EncodingKey) -> Result<impl Responder> {
 	let exp = (Utc::now() + Duration::minutes(3)).timestamp() as usize;
 
 	jsonwebtoken::encode(&HEADER, &Claims { exp, uid }, key)
@@ -109,7 +111,7 @@ async fn create(
 	key: web::Data<EncodingKey>,
 	config: web::Data<argon2::Config<'static>>,
 	data: web::Json<Signup>,
-) -> Response {
+) -> Result<impl Responder> {
 	if data.metadata.username.is_empty() || data.metadata.name.is_empty() || data.password.len() < 8
 	{
 		return Err(ErrorBadRequest("username, name must be at least one character and password mut be at least 8 characters"));
@@ -166,7 +168,7 @@ async fn login(
 	key: web::Data<EncodingKey>,
 	config: web::Data<argon2::Config<'static>>,
 	data: web::Json<Login>,
-) -> Response {
+) -> Result<impl Responder> {
 	if data.username.is_empty() || data.password.is_empty() {
 		return Err(ErrorBadRequest("username and password cannot be empty"));
 	}
@@ -203,7 +205,7 @@ struct UpdateUniv {
 	id: i64,
 }
 
-async fn get_universities(con: web::Data<Pool>, req: HttpRequest) -> Response {
+async fn get_universities(con: web::Data<Pool>, req: HttpRequest) -> Result<impl Responder> {
 	let uid = get_uid(&req);
 
 	let user = User::load(Pool::clone(&con), uid)
@@ -225,7 +227,7 @@ async fn add_university(
 	con: web::Data<Pool>,
 	req: HttpRequest,
 	data: web::Json<UpdateUniv>,
-) -> Response {
+) -> Result<impl Responder> {
 	let uid = get_uid(&req);
 
 	// TODO: check if user exists and hasn't already subscribed to university
@@ -246,7 +248,7 @@ async fn delete_university(
 	con: web::Data<Pool>,
 	req: HttpRequest,
 	data: web::Json<UpdateUniv>,
-) -> Response {
+) -> Result<impl Responder> {
 	let uid = get_uid(&req);
 
 	sqlx::query!(
@@ -265,7 +267,10 @@ struct UsernameQuery {
 	username: String,
 }
 
-async fn username_available(con: web::Data<Pool>, query: web::Query<UsernameQuery>) -> Response {
+async fn username_available(
+	con: web::Data<Pool>,
+	query: web::Query<UsernameQuery>,
+) -> Result<impl Responder> {
 	if query.username.is_empty() {
 		return Err(ErrorBadRequest("username cannot be empty"));
 	}

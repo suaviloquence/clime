@@ -1,13 +1,8 @@
-use actix_web::{
-	web::{self, ServiceConfig},
-	HttpResponse,
-};
+use actix_web::web::{self, ServiceConfig};
 use log::info;
 
 mod university;
 mod user;
-
-pub type Response = actix_web::Result<HttpResponse>;
 
 pub fn configure(cfg: &mut ServiceConfig) {
 	cfg.app_data(web::JsonConfig::default().error_handler(|err, _| {
