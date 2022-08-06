@@ -4,6 +4,7 @@
   import { onMount } from "svelte";
   import type { University, Weather } from "../models";
   import WeatherInfo from "../components/WeatherInfo.svelte";
+  import Link from "../components/Link.svelte";
 
   $: if (!$isAuthed) {
     $path = "/user/login";
@@ -31,19 +32,20 @@
   Loading dashboard...
 {:then user}
   <h2>Good morning, {user.metadata.name}</h2>
+  <div>
+    <Link href="/user/me">Settings</Link>
+  </div>
   {#if !universities}
     Loading universities...
   {:else}
     <ul>
       <li>
-        <button on:click={() => ($path = "/university/add")}>Add</button>
+        <Link href="/university/add">Add</Link>
       </li>
       {#each universities as university}
         <li>
           <WeatherInfo weather={university.weather} name={university.name} />
-          <button on:click={() => ($path = `/university/${university.id}`)}
-            >Info</button
-          >
+          <Link href={`/university/${university.id}`}>Info</Link>
         </li>
       {/each}
     </ul>

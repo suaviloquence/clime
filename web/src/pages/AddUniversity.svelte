@@ -2,6 +2,7 @@
   import { isAuthed, user, authedFetch } from "./UserInfo.svelte";
   import { path } from "../Router.svelte";
   import UniversitySearch from "../components/UniversitySearch.svelte";
+  import Link from "../components/Link.svelte";
 
   if (!$isAuthed) $path = "/user/login";
 
@@ -20,7 +21,7 @@
 
 <UniversitySearch let:item={{ name, id }}>
   {name}:
-  <button on:click={() => ($path = `/university/${id}`)}>Info</button>
+  <Link href={`/university/${id}`}>Info</Link>
   {#await $user then user}
     <button on:click={() => swap(id)}
       >{user.universities.includes(id) ? "Remove" : "Add"}</button
