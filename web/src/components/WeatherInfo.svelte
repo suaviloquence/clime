@@ -30,7 +30,7 @@
     if (units === "imperial") return (mps * 2.237).toFixed(1) + " mph";
   }
 
-  const fmt = new Intl.DateTimeFormat(undefined, {
+  const fmt = new Intl.DateTimeFormat([...navigator.languages], {
     weekday: "long",
     hour: "numeric",
   });
@@ -44,12 +44,12 @@
   import type { Weather } from "../models";
 
   export let weather: Weather;
-  export let name: string | null = null;
 </script>
 
 <h3>
-  {#if name}{name}: {/if}
-  {formatDate(new Date(weather.time * 1000))}
+  <slot>
+    {formatDate(new Date(weather.time))}
+  </slot>:
   {convertTemperature(weather.temperature, $units)}
 </h3>
 <ul>

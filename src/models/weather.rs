@@ -1,4 +1,4 @@
-use chrono::{NaiveDateTime, Utc};
+use chrono::{naive::serde::ts_milliseconds, NaiveDateTime, Utc};
 use openweather::{Client, Coordinates};
 use serde::Serialize;
 
@@ -9,7 +9,7 @@ use super::university::University;
 #[derive(Debug, Serialize)]
 pub struct Weather {
 	pub university_id: i64,
-	#[serde(with = "chrono::naive::serde::ts_seconds")]
+	#[serde(with = "ts_milliseconds")]
 	pub time: NaiveDateTime,
 	pub temperature: f64,
 	pub feels_like: f64,
