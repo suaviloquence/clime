@@ -1,8 +1,7 @@
+use crate::db::{Executor, Pool};
 use chrono::{naive::serde::ts_milliseconds, NaiveDateTime, Utc};
 use openweather::{Client, Coordinates};
 use serde::Serialize;
-
-use crate::db::Pool;
 
 use super::university::University;
 
@@ -89,7 +88,7 @@ impl Weather {
 		.await
 	}
 
-	pub async fn put(&self, con: &Pool) -> sqlx::Result<()> {
+	pub async fn put(&self, con: impl Executor<'_>) -> sqlx::Result<()> {
 		sqlx::query!(
 			"INSERT INTO weather (
 				university_id,

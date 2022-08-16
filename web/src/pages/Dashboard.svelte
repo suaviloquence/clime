@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { isAuthed, authedFetch, user } from "./UserInfo.svelte";
-  import { path } from "../Router.svelte";
+  import { isAuthed, authedFetch, user, path } from "../stores";
   import { onMount } from "svelte";
   import type { University, Weather } from "../models";
   import WeatherInfo from "../components/WeatherInfo.svelte";
@@ -44,7 +43,10 @@
       </li>
       {#each universities as university}
         <li>
-          <WeatherInfo weather={university.weather} name={university.name} />
+          <WeatherInfo
+            weather={university.weather}
+            timezone={university.timezone}>{university.name}</WeatherInfo
+          >
           <Link href={`/university/${university.id}`}>Info</Link>
         </li>
       {/each}

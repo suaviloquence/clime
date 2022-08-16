@@ -50,6 +50,7 @@ export interface University {
   price_in_district?: number;
   price_in_state?: number;
   price_out_of_state?: number;
+  timezone: string;
 }
 
 export interface Weather {
@@ -81,4 +82,18 @@ export interface UserMetadata {
 export interface JwtInfo {
   jwt: string;
   exp: number;
+}
+
+export interface Forecast {
+  university_id: number;
+  time: number;
+  fetched_at: number;
+  temperature: number;
+  feels_like: number;
+  weather_id: number;
+  weather_description: string;
+  humidity: number;
+  pressure: number;
+  wind_speed: number;
+  precipitation_chance: number;
 }

@@ -9,7 +9,7 @@ use actix_web::{web, App, HttpServer};
 use anyhow::Context;
 use jsonwebtoken::{DecodingKey, EncodingKey};
 use openweather::Client;
-use workers::weather::WeatherUpdater;
+use workers::{forecast::ForecastUpdater, weather::WeatherUpdater};
 
 mod api;
 pub mod db;
@@ -35,10 +35,6 @@ async fn main() -> anyhow::Result<()> {
 		.context("Error connecting to database")?;
 
 	let jwt_secret = get_env("JWT_SECRET")?;
-	// let encoder =
-	// 	EncodingKey::from_base64_secret(&jwt_secret).context("Error creating JWT encoding key.")?;
-	// let decoder =
-	// 	DecodingKey::from_base64_secret(&jwt_secret).context("Error creating JWT decoding key")?;
 	let encoder = EncodingKey::from_secret(jwt_secret.as_bytes());
 	let decoder = DecodingKey::from_secret(jwt_secret.as_bytes());
 
@@ -50,6 +46,12 @@ async fn main() -> anyhow::Result<()> {
 	};
 
 	WeatherUpdater {
+		con: con.clone(),
+		client: client.clone(),
+	}
+	.start();
+
+	ForecastUpdater {
 		con: con.clone(),
 		client: client.clone(),
 	}

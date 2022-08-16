@@ -1,6 +1,7 @@
+use openweather::Coordinates;
 use serde::Serialize;
 
-use crate::db::Pool;
+use crate::db::{Executor, Pool};
 
 use super::Load;
 
@@ -59,6 +60,7 @@ pub struct University {
 	pub price_in_district: Option<i64>,
 	pub price_in_state: Option<i64>,
 	pub price_out_of_state: Option<i64>,
+	pub timezone: String,
 }
 
 impl Load for University {
@@ -80,4 +82,19 @@ impl Load for University {
 	// sqlx::query_as!(Self, r#"SELECT * FROM universities WHERE id = $1"#, id)
 	// 	.fetch_optional(con)
 	// 	.await
+}
+
+impl University {
+	pub async fn get_coordinates(
+		con: impl Executor<'_>,
+		id: i64,
+	) -> sqlx::Result<Option<Coordinates>> {
+		sqlx::query_as!(
+			Coordinates,
+			"SELECT latitude, longitude FROM universities WHERE id = $1",
+			id
+		)
+		.fetch_optional(con)
+		.await
+	}
 }

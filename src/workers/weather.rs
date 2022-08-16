@@ -46,6 +46,12 @@ impl WeatherUpdater {
 				.context("Error getting universities to fetch from database.")
 				.unwrap();
 
+				let mut trans = con
+					.begin()
+					.await
+					.context("Error beginning transaction.")
+					.unwrap();
+
 				for row in universities {
 					let weather = Weather::fetch(
 						&client,
@@ -65,7 +71,7 @@ impl WeatherUpdater {
 					.unwrap();
 
 					weather
-						.put(&con)
+						.put(&mut trans)
 						.await
 						.with_context(|| {
 							format!("Error inserting weather {:?} into database", weather)
@@ -74,6 +80,12 @@ impl WeatherUpdater {
 
 					log::info!("Updated university {}", row.university_id);
 				}
+
+				trans
+					.commit()
+					.await
+					.context("Error committing transaction")
+					.unwrap();
 			}
 			.into_actor(self),
 		);

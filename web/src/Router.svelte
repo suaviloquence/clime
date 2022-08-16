@@ -1,9 +1,3 @@
-<script context="module" lang="ts">
-  import { type Writable, writable } from "svelte/store";
-
-  export const path: Writable<string> = writable(window.location.pathname);
-</script>
-
 <script lang="ts">
   import type { SvelteComponent } from "svelte";
   import AddUniversity from "./pages/AddUniversity.svelte";
@@ -11,6 +5,7 @@
   import UniversityInfo from "./pages/UniversityInfo.svelte";
   import UserInfo from "./pages/UserInfo.svelte";
   import Dashboard from "./pages/Dashboard.svelte";
+  import { path } from "./stores";
 
   /// e.g., set to /app so /home corresponds to example.com/app/home
   const PREFIX = "";

@@ -9,7 +9,7 @@ use crate::{
 };
 
 #[repr(u32)]
-#[derive(Debug, Deserialize_repr)]
+#[derive(Debug, Deserialize_repr, Clone, Copy)]
 /// https://openweathermap.org/weather-conditions
 pub enum WeatherCondition {
 	ThunderstormLightRain = 200,

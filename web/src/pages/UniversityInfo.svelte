@@ -1,8 +1,8 @@
 <script lang="ts">
   import WeatherInfo from "../components/WeatherInfo.svelte";
-  import { isAuthed, authedFetch, user } from "./UserInfo.svelte";
-  import { path } from "../Router.svelte";
-  import type { Consideration, University, Weather } from "../models";
+  import { isAuthed, authedFetch, user, path } from "../stores";
+  import type { Consideration, Forecast, University, Weather } from "../models";
+  import ForecastInfo from "../components/ForecastInfo.svelte";
 
   enum Tab {
     Weather,
@@ -19,6 +19,10 @@
   let weather: Promise<Weather[]> = fetch(`/api/university/${id}/weather`).then(
     (res) => res.json()
   );
+
+  let forecasts: Promise<Forecast[]> = fetch(
+    `/api/university/${id}/forecast`
+  ).then((res) => res.json());
 
   let tab = Tab.Weather;
 
@@ -95,10 +99,16 @@
       <ol>
         {#each weather as weather}
           <li>
-            <WeatherInfo {weather} />
+            <WeatherInfo {weather} timezone={university.timezone} />
           </li>
         {/each}
       </ol>
+    {/await}
+    <h2>Forecasts</h2>
+    {#await forecasts}
+      <p>Loading forecasts...</p>
+    {:then forecasts}
+      <ForecastInfo {forecasts} timezone={university.timezone} />
     {/await}
   {:else if tab === Tab.Stats}
     <ul>

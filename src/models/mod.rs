@@ -1,6 +1,7 @@
 use futures_util::future::{self, BoxFuture};
 use serde::Serialize;
 
+pub mod forecast;
 pub mod university;
 pub mod user;
 pub mod weather;

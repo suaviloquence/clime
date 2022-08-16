@@ -9,8 +9,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
 	db::Pool,
-	models::{university::University, weather::Weather, Load},
+	models::{forecast::Forecast, university::University, weather::Weather, Load},
 };
+
+use super::IntoHttpError;
 
 #[derive(Debug, Deserialize)]
 pub struct IdParams {
@@ -18,7 +20,7 @@ pub struct IdParams {
 }
 
 async fn get_university(con: &web::Data<Pool>, params: web::Path<IdParams>) -> Result<University> {
-	match University::load(Pool::clone(&con), params.id).await {
+	match University::load(Pool::clone(con), params.id).await {
 		Ok(Some(univ)) => Ok(univ),
 		Ok(None) => Err(ErrorNotFound("university not found")),
 		Err(err) => Err(ErrorInternalServerError(err)),
@@ -55,7 +57,7 @@ async fn search(con: web::Data<Pool>, query: web::Query<SearchParams>) -> Result
 	)
 	.fetch_all(&**con)
 	.await
-	.map_err(actix_web::error::ErrorInternalServerError)?;
+	.into_500()?;
 
 	Ok(HttpResponse::Ok().json(matches))
 }
@@ -65,34 +67,31 @@ async fn weather(
 	client: web::Data<Client>,
 	params: web::Path<IdParams>,
 ) -> Result<impl Responder> {
-	let mut weather: Vec<_> = Weather::get_most_recent(&con, params.id, 4)
+	let mut weather: Vec<_> = Weather::get_most_recent(con.as_ref(), params.id, 4)
 		.await
 		.map_err(ErrorInternalServerError)?
 		.into_iter()
-		.zip(1i64..)
-		.filter(|(data, i)| {
+		.filter(|data| {
 			Utc::now()
 				.naive_utc()
 				.signed_duration_since(data.time)
-				.num_hours() <= *i
+				.num_hours() <= 4
 		})
-		.map(|(data, _)| data)
 		.collect();
 
 	if weather.is_empty() {
-		let coords = sqlx::query_as!(
-			openweather::Coordinates,
-			"SELECT latitude, longitude FROM universities WHERE id = $1",
-			params.id
-		)
-		.fetch_one(&**con)
-		.await
-		.map_err(ErrorInternalServerError)?;
+		let coords = University::get_coordinates(con.as_ref(), params.id)
+			.await
+			.map_err(ErrorInternalServerError)?
+			.ok_or_else(|| ErrorNotFound("university not found"))?;
+
 		let data = Weather::fetch(&client, params.id, &coords)
 			.await
 			.map_err(ErrorInternalServerError)?;
 
-		data.put(&**con).await.map_err(ErrorInternalServerError)?;
+		data.put(con.as_ref())
+			.await
+			.map_err(ErrorInternalServerError)?;
 
 		weather.reserve_exact(1);
 		weather.push(data);
@@ -101,8 +100,48 @@ async fn weather(
 	Ok(HttpResponse::Ok().json(weather))
 }
 
+async fn forecast(
+	con: web::Data<Pool>,
+	client: web::Data<Client>,
+	params: web::Path<IdParams>,
+) -> Result<impl Responder> {
+	let mut forecasts = Forecast::get_most_recent(con.as_ref(), params.id, 40)
+		.await
+		.into_500()?
+		.into_iter()
+		.filter(|data| {
+			Utc::now()
+				.naive_utc()
+				.signed_duration_since(data.time)
+				.num_hours() <= 40
+		})
+		.collect::<Vec<_>>();
+
+	if forecasts.is_empty() {
+		let coords = University::get_coordinates(con.as_ref(), params.id)
+			.await
+			.into_500()?
+			.ok_or_else(|| ErrorNotFound("university not found"))?;
+
+		forecasts = Forecast::fetch(Client::clone(&client), params.id, &coords, 40)
+			.await
+			.into_500()?;
+
+		let mut trans = con.begin().await.into_500()?;
+
+		for f in forecasts.iter() {
+			f.put(&mut trans).await.into_500()?;
+		}
+
+		trans.commit().await.into_500()?;
+	}
+
+	Ok(HttpResponse::Ok().json(forecasts))
+}
+
 pub(super) fn configure(cfg: &mut ServiceConfig) {
 	cfg.service(web::resource("/search").route(web::get().to(search)))
 		.service(web::resource("/{id}").route(web::get().to(get)))
-		.service(web::resource("/{id}/weather").route(web::get().to(weather)));
+		.service(web::resource("/{id}/weather").route(web::get().to(weather)))
+		.service(web::resource("/{id}/forecast").route(web::get().to(forecast)));
 }

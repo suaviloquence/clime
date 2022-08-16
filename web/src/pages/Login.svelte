@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { JwtInfo } from "../models";
-  import { path } from "../Router.svelte";
-  import { isAuthed, auth } from "./UserInfo.svelte";
+  import { isAuthed, auth, path } from "../stores";
 
   if ($isAuthed) {
     $path = "/dashboard";

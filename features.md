@@ -4,8 +4,55 @@
   - [ ] password resets?
 - [ ] styles
 - [ ] deadlines
-- [ ] unit, timezone preferences
+- [x] unit preferences
+- [ ] timezone preferences
 - [ ] no-login mode (store prefs in local storage)
 - [ ] forecasts
+  - [x] get forecasts from ow api
+  - [x] endpoints for getting saved forecasts
+  - [x] display forecast as chart by day
+    - [x] can click on individual nodes to get more info
+    - [ ] add icons to represent weather
+      - [ ] NOTE: before adding icons, the root <svg> tag has to have id "svg"
+      - [ ] 221 ragged thunderstorm
+      - [ ] 230 thudnerstorm light drizzle
+      - [ ] 231 thudnerstorm drizzle
+      - [ ] 232 thudnerstorm heavy drizzle
+      - [ ] 300 light drizzle
+      - [ ] 301 drizzle
+      - [ ] 302 heavy drizzle
+      - [ ] 310 light drizzle rain
+      - [ ] 311 drizzle rain
+      - [ ] 312 heavy drizzle rain
+      - [ ] 313 shower rain drizzle
+      - [ ] 314 heavy shower rain drizzle
+      - [ ] 321 shower drizzle
+      - [ ] 520 light shower rain
+      - [ ] 521 shower rain
+      - [ ] 522 heavy shower rain
+      - [ ] 531 ragged shower rain
+      - [ ] 611 sleet
+      - [ ] 612 light shower sleet
+      - [ ] 613 shower sleet
+      - [ ] 615 light rain snow
+      - [ ] 616 rain snow
+      - [ ] 620 light shower snow
+      - [ ] 621 shower snow
+      - [ ] 622 heavy shower snow
+      - [ ] 701 mist
+      - [ ] 711 smoke
+      - [ ] 721 haze
+      - [ ] 731 sand/dust whirls
+      - [ ] 741 fog
+      - [ ] 751 sand
+      - [ ] 761 dust
+      - [ ] 762 ash
+      - [ ] 771 squalls?
+      - [ ] 781 tornado
+  - [ ] get forecast for whole of today even if it's already happened
 - [ ] what was/will be the weather at this point in time
   - if user's time is 5 PST, report weather for new york at 5 EST
+- [ ] cite data sources
+  - https://www.geonames.org/export/ws-overview.html
+  - bureau where univ data came from (see dataset folder)
+  - openweather api

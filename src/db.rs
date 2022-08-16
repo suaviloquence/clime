@@ -11,6 +11,9 @@ type DB = sqlx::Postgres;
 
 pub type Pool = sqlx::Pool<DB>;
 
+pub trait Executor<'a>: sqlx::Executor<'a, Database = DB> {}
+impl<'a, T: sqlx::Executor<'a, Database = DB>> Executor<'a> for T {}
+
 pub async fn create(url: &str) -> sqlx::Result<Pool> {
 	PoolOptions::new().connect(url).await
 }

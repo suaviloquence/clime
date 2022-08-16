@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { isAuthed, user, authedFetch } from "./UserInfo.svelte";
-  import { path } from "../Router.svelte";
+  import { isAuthed, user, authedFetch, path } from "../stores";
   import UniversitySearch from "../components/UniversitySearch.svelte";
   import Link from "../components/Link.svelte";
 

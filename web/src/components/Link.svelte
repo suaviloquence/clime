@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { path } from "../Router.svelte";
+  import { path } from "../stores";
 
   export let href: string;
 </script>

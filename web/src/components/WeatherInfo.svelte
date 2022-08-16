@@ -1,6 +1,6 @@
 <script context="module" lang="ts">
   import { type Readable, derived } from "svelte/store";
-  import { user } from "../pages/UserInfo.svelte";
+  import { user } from "../stores";
 
   export const units: Readable<"imperial" | "metric"> = derived(
     user,
@@ -30,13 +30,17 @@
     if (units === "imperial") return (mps * 2.237).toFixed(1) + " mph";
   }
 
-  const fmt = new Intl.DateTimeFormat([...navigator.languages], {
+  const fmtOptions: Intl.DateTimeFormatOptions = {
     weekday: "long",
     hour: "numeric",
-  });
+    timeZoneName: "short",
+  };
 
-  export function formatDate(date: Date): string {
-    return fmt.format(date);
+  export function formatDate(date: Date | number, timeZone?: string): string {
+    return new Intl.DateTimeFormat([...navigator.languages], {
+      timeZone,
+      ...fmtOptions,
+    }).format(date);
   }
 </script>
 
@@ -44,11 +48,12 @@
   import type { Weather } from "../models";
 
   export let weather: Weather;
+  export let timezone: string;
 </script>
 
 <h3>
   <slot>
-    {formatDate(new Date(weather.time))}
+    {formatDate(weather.time, timezone)}
   </slot>:
   {convertTemperature(weather.temperature, $units)}
 </h3>

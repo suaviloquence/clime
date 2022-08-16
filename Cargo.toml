@@ -40,5 +40,5 @@ postgres = ["sqlx/postgres"]
 
 [workspace]
 members = [
-	"openweather"
+	"openweather",
 ]
