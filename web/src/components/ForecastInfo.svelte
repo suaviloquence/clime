@@ -112,13 +112,16 @@
       viewBox="{radius * -3} {-radius} {width + radius * 4} {height +
         3 * radius}"
     >
-      <rect
-        x={-radius / 2}
-        y={-radius / 2}
-        width={width + radius}
-        height={height + radius}
-        fill="#adf"
-      />
+      {#each buckets[open] as forecast, i}
+        <rect
+          x={x(i) - radius * 1.5}
+          y={-radius / 2}
+          width={radius * 3}
+          height={height + radius / 2}
+          class:day={forecast.is_day}
+          class:night={!forecast.is_day}
+        />
+      {/each}
       {#if max === min}
         <text
           x={-radius * 3}
@@ -178,7 +181,7 @@
           width={2 * radius}
           height={2 * radius}
           class:selected={detailedView === forecast}
-          style="cursor: pointer"
+          class="icon"
         >
           <title
             >{convertTemperature(forecast.temperature, $units)}, {forecast.weather_description}</title
@@ -261,5 +264,17 @@
   .grid {
     stroke: #888;
     stroke-dasharray: 4;
+  }
+
+  .day {
+    fill: #8af;
+  }
+
+  .night {
+    fill: #55a;
+  }
+
+  .icon {
+    cursor: pointer;
   }
 </style>

@@ -96,4 +96,5 @@ export interface Forecast {
   pressure: number;
   wind_speed: number;
   precipitation_chance: number;
+  is_day: boolean;
 }

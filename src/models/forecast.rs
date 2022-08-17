@@ -1,6 +1,6 @@
 use chrono::{naive::serde::ts_milliseconds, NaiveDateTime, Utc};
 use chrono_tz::Tz;
-use openweather::{Client, Coordinates};
+use openweather::{forecast::PartOfDay, Client, Coordinates};
 use serde::Serialize;
 
 use crate::db::Executor;
@@ -20,6 +20,7 @@ pub struct Forecast {
 	pub pressure: f64,
 	pub wind_speed: f64,
 	pub precipitation_chance: f64,
+	pub is_day: bool,
 }
 
 impl Forecast {
@@ -50,6 +51,7 @@ impl Forecast {
 						pressure: f.main.pressure,
 						wind_speed: f.wind.speed.0,
 						precipitation_chance: f.precipitation_probability as f64,
+						is_day: f.sys.part_of_day == PartOfDay::Day,
 					}
 				})
 				.collect()
@@ -69,8 +71,9 @@ impl Forecast {
 				humidity,
 				pressure,
 				wind_speed,
-				precipitation_chance
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				precipitation_chance,
+				is_day
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 				ON CONFLICT(university_id, time) DO UPDATE SET (
 					fetched_at,
 					temperature,
@@ -80,7 +83,8 @@ impl Forecast {
 					humidity,
 					pressure,
 					wind_speed,
-					precipitation_chance
+					precipitation_chance,
+					is_day
 				) = (
 					excluded.fetched_at,
 					excluded.temperature,
@@ -90,7 +94,8 @@ impl Forecast {
 					excluded.humidity,
 					excluded.pressure,
 					excluded.wind_speed,
-					excluded.precipitation_chance
+					excluded.precipitation_chance,
+					excluded.is_day
 				)
 			",
 			self.university_id,
@@ -104,6 +109,7 @@ impl Forecast {
 			self.pressure,
 			self.wind_speed,
 			self.precipitation_chance,
+			self.is_day
 		)
 		.execute(con)
 		.await
@@ -156,7 +162,7 @@ impl Forecast {
 			.naive_utc();
 
 		// worst-case scenario: 11:59 pm => 40 max + 8/day = 48
-		const LIMIT: u32 = 200;
+		const LIMIT: u32 = 48;
 
 		Self::get_most_recent(con, university_id, LIMIT)
 			.await
