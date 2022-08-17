@@ -3,13 +3,12 @@ extern crate lazy_static;
 
 use std::env;
 
-use actix::Actor;
 use actix_files::{Files, NamedFile};
 use actix_web::{web, App, HttpServer};
 use anyhow::Context;
 use jsonwebtoken::{DecodingKey, EncodingKey};
 use openweather::Client;
-use workers::{forecast::ForecastUpdater, weather::WeatherUpdater};
+use workers::{forecast::ForecastUpdater, weather::WeatherUpdater, Updater};
 
 mod api;
 pub mod db;
@@ -45,17 +44,15 @@ async fn main() -> anyhow::Result<()> {
 		..Default::default()
 	};
 
-	WeatherUpdater {
+	Updater::start(WeatherUpdater {
 		con: con.clone(),
 		client: client.clone(),
-	}
-	.start();
+	});
 
-	ForecastUpdater {
+	Updater::start(ForecastUpdater {
 		con: con.clone(),
 		client: client.clone(),
-	}
-	.start();
+	});
 
 	sqlx::migrate!("./migrations")
 		.run(&con)

@@ -1,94 +1,79 @@
 use std::time::Duration;
 
-use actix::{Actor, AsyncContext, Context, WrapFuture};
 use anyhow::Context as _;
-use chrono::Utc;
 use openweather::{Client, Coordinates};
 
 use crate::{db::Pool, models::weather::Weather};
 
-const INTERVAL_LENGTH: u64 = 3600;
+use super::Update;
 
+#[derive(Debug, Clone)]
 pub struct WeatherUpdater {
 	pub con: Pool,
 	pub client: Client,
 }
 
-impl Actor for WeatherUpdater {
-	type Context = Context<Self>;
+impl Update for WeatherUpdater {
+	const INTERVAL_LENGTH: Duration = Duration::from_secs(60 * 60);
 
-	fn started(&mut self, ctx: &mut Self::Context) {
-		log::info!("Waiting to run until {:?}", next_interval());
-		ctx.run_later(next_interval(), move |_, ctx| {
-			log::info!("Starting interval");
-			ctx.run_interval(Duration::from_secs(INTERVAL_LENGTH), Self::update);
-		});
-	}
-}
+	type Future = futures_util::future::BoxFuture<'static, ()>;
 
-impl WeatherUpdater {
-	fn update(&mut self, ctx: &mut Context<Self>) {
-		ctx.spawn(Self::run(self.con.clone(), self.client.clone()).into_actor(self));
-	}
-
-	pub async fn run(con: Pool, client: Client) {
-		log::info!("Getting universities..");
-		let universities = sqlx::query!(
-			r#"SELECT DISTINCT
+	fn update(self) -> Self::Future {
+		Box::pin(async move {
+			log::info!("Getting universities..");
+			let universities = sqlx::query!(
+				r#"SELECT DISTINCT
 								get_weather.university_id,
 								universities.longitude,
 								universities.latitude
 							FROM get_weather INNER JOIN universities
 								ON get_weather.university_id = universities.id"#
-		)
-		.fetch_all(&con)
-		.await
-		.context("Error getting universities to fetch from database.")
-		.unwrap();
-
-		let mut trans = con
-			.begin()
-			.await
-			.context("Error beginning transaction.")
-			.unwrap();
-
-		for row in universities {
-			let weather = Weather::fetch(
-				&client,
-				row.university_id,
-				&Coordinates {
-					latitude: row.latitude,
-					longitude: row.longitude,
-				},
 			)
+			.fetch_all(&self.con)
 			.await
-			.with_context(|| {
-				format!(
-					"Error fetching from openweather API (university {}: ({:.3}, {:.3})",
-					row.university_id, row.latitude, row.longitude
-				)
-			})
+			.context("Error getting universities to fetch from database.")
 			.unwrap();
 
-			weather
-				.put(&mut trans)
+			let mut trans = self
+				.con
+				.begin()
 				.await
-				.with_context(|| format!("Error inserting weather {:?} into database", weather))
+				.context("Error beginning transaction.")
 				.unwrap();
 
-			log::info!("Updated university {}", row.university_id);
-		}
+			for row in universities {
+				let weather = Weather::fetch(
+					&self.client,
+					row.university_id,
+					&Coordinates {
+						latitude: row.latitude,
+						longitude: row.longitude,
+					},
+				)
+				.await
+				.with_context(|| {
+					format!(
+						"Error fetching from openweather API (university {}: ({:.3}, {:.3})",
+						row.university_id, row.latitude, row.longitude
+					)
+				})
+				.unwrap();
 
-		trans
-			.commit()
-			.await
-			.context("Error committing transaction")
-			.unwrap();
-		log::info!("Committed transaction");
+				weather
+					.put(&mut trans)
+					.await
+					.with_context(|| format!("Error inserting weather {:?} into database", weather))
+					.unwrap();
+
+				log::info!("Updated university {}", row.university_id);
+			}
+
+			trans
+				.commit()
+				.await
+				.context("Error committing transaction")
+				.unwrap();
+			log::info!("Committed transaction");
+		})
 	}
-}
-
-fn next_interval() -> Duration {
-	let now = Utc::now();
-	Duration::from_secs(INTERVAL_LENGTH - now.timestamp() as u64 % INTERVAL_LENGTH)
 }
