@@ -1,4 +1,5 @@
 use chrono::{naive::serde::ts_milliseconds, NaiveDateTime, Utc};
+use chrono_tz::Tz;
 use openweather::{Client, Coordinates};
 use serde::Serialize;
 
@@ -125,12 +126,48 @@ impl Forecast {
 		)
 		.fetch_all(con)
 		.await
-		.map(|vec| {
-			// we want forecasts that haven't already happened and to be sorted closest in the future first
-			vec.into_iter()
-				.rev()
-				.filter(|f| f.time >= Utc::now().naive_utc())
-				.collect()
-		})
+	}
+
+	pub async fn get_all_since(
+		con: impl Executor<'_> + Clone,
+		university_id: i64,
+	) -> sqlx::Result<Option<Vec<Self>>> {
+		let tz = match sqlx::query!(
+			"SELECT timezone FROM universities WHERE id = $1",
+			university_id
+		)
+		.fetch_optional(con.clone())
+		.await?
+		{
+			Some(row) => row.timezone,
+			None => return Ok(None),
+		};
+
+		// TODO this shouldnt happen-- should we add error to ret type?
+		let tz = tz
+			.parse::<Tz>()
+			.map_err(|_| format!("Could not load {} as timezone", tz))
+			.unwrap();
+
+		let not_before = Utc::now()
+			.with_timezone(&tz)
+			.date()
+			.and_hms(0, 0, 0)
+			.naive_utc();
+
+		// worst-case scenario: 11:59 pm => 40 max + 8/day = 48
+		const LIMIT: u32 = 200;
+
+		Self::get_most_recent(con, university_id, LIMIT)
+			.await
+			.map(|forecasts| {
+				Some(
+					forecasts
+						.into_iter()
+						.filter(|forecast| forecast.time >= not_before)
+						.rev()
+						.collect(),
+				)
+			})
 	}
 }

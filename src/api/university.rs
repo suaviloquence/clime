@@ -105,9 +105,10 @@ async fn forecast(
 	client: web::Data<Client>,
 	params: web::Path<IdParams>,
 ) -> Result<impl Responder> {
-	let mut forecasts = Forecast::get_most_recent(con.as_ref(), params.id, 40)
+	let mut forecasts = Forecast::get_all_since(con.as_ref(), params.id)
 		.await
 		.into_500()?
+		.ok_or_else(|| ErrorNotFound("university not found"))?
 		.into_iter()
 		.filter(|data| {
 			Utc::now()
