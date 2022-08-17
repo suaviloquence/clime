@@ -94,5 +94,5 @@ impl ForecastUpdater {
 
 fn next_interval() -> Duration {
 	let now = Utc::now();
-	Duration::from_secs(now.timestamp() as u64 % INTERVAL_LENGTH)
+	Duration::from_secs(INTERVAL_LENGTH - now.timestamp() as u64 % INTERVAL_LENGTH)
 }
