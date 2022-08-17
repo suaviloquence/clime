@@ -223,7 +223,7 @@
 
 <style>
   /* HACK: this allows highlighting on click/hover */
-  :global(svg *:not(line):not(use)) {
+  :global(svg *:not(use, line, .keep-stroke)) {
     stroke: inherit !important;
   }
 
