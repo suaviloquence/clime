@@ -15,7 +15,7 @@ pub struct PrecipitationVolume3H {
 	pub value: f64,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq, Eq, Clone, Copy)]
 pub enum PartOfDay {
 	#[serde(rename = "n")]
 	Night,
@@ -25,6 +25,7 @@ pub enum PartOfDay {
 
 #[derive(Debug, Deserialize)]
 pub struct SysInfo {
+	#[serde(rename = "pod")]
 	pub part_of_day: PartOfDay,
 }
 
@@ -64,6 +65,7 @@ pub struct Forecast {
 	pub rain: PrecipitationVolume3H,
 	#[serde(default)]
 	pub snow: PrecipitationVolume3H,
+	pub sys: SysInfo,
 	// TODO: dt_txt: string representation of `time` (dt)
 }
 

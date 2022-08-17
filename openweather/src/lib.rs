@@ -4,10 +4,10 @@ use log::error;
 use reqwest::{header::HeaderValue, Method, RequestBuilder, StatusCode};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-mod forecast;
+pub mod forecast;
 mod options;
 pub mod units;
-pub(crate) mod weather;
+pub mod weather;
 
 pub use options::{Language, Options};
 pub use units::Units;
