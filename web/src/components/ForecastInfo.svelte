@@ -174,7 +174,9 @@
         />
         <!-- NOTE: before adding icons, the root <svg> tag has to have id "svg" -->
         <use
-          href="/static/assets/{forecast.weather_id}.svg#svg"
+          href="/static/assets/{forecast.weather_id}-{forecast.is_day
+            ? 'day'
+            : 'night'}.svg#svg"
           on:click={toggleView(forecast)}
           x={x(i) - radius}
           y={y(forecast) - radius}
