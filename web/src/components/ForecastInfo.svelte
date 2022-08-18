@@ -66,8 +66,12 @@
   let radius = 20;
 
   let height = radius * 5;
-  // 8 sections - extra 10px for padding
-  let width = 8 * (2.5 * radius) - 0.5 * radius;
+  let width = widthOf(8);
+
+  function widthOf(n: number): number {
+    // n sections - extra 10px for padding
+    return n * (2.5 * radius) - 0.5 * radius;
+  }
 
   function x(i: number): number {
     return i * (2.5 * radius) + radius;
@@ -122,6 +126,13 @@
           class:night={!forecast.is_day}
         />
       {/each}
+      <line
+        x1={0}
+        x2={widthOf(buckets[open].length)}
+        y1={height / 2}
+        y2={height / 2}
+        class="grid"
+      />
       {#if max === min}
         <text
           x={-radius * 3}
@@ -129,12 +140,17 @@
           width={3 * radius}
           dominant-baseline="middle">{convertTemperature(max, $units)}</text
         >
-        <line x1={0} x2={width} y1={height / 2} y2={height / 2} class="grid" />
       {:else}
-        <line x1={0} x2={width} y1={radius} y2={radius} class="grid" />
         <line
           x1={0}
-          x2={width}
+          x2={widthOf(buckets[open].length)}
+          y1={radius}
+          y2={radius}
+          class="grid"
+        />
+        <line
+          x1={0}
+          x2={widthOf(buckets[open].length)}
           y1={height - radius}
           y2={height - radius}
           class="grid"
