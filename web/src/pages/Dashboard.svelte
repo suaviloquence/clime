@@ -41,13 +41,14 @@
       <li>
         <Link href="/university/add">Add</Link>
       </li>
-      {#each universities as university}
+      {#each universities as university, i}
         <li>
           <WeatherInfo
             weather={university.weather}
-            timezone={university.timezone}>{university.name}</WeatherInfo
-          >
-          <Link href={`/university/${university.id}`}>Info</Link>
+            timezone={university.timezone}
+            >{university.name}
+            <Link href={`/university/${university.id}`}>Info</Link>
+          </WeatherInfo>
         </li>
       {/each}
     </ul>

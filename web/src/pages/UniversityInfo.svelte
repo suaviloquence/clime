@@ -97,9 +97,13 @@
       <p>Loading weather...</p>
     {:then weather}
       <ol>
-        {#each weather as weather}
+        {#each weather as weather, i}
           <li>
-            <WeatherInfo {weather} timezone={university.timezone} />
+            <WeatherInfo
+              {weather}
+              timezone={university.timezone}
+              expanded={i === 0}
+            />
           </li>
         {/each}
       </ol>
