@@ -11,7 +11,7 @@ pub mod weather;
 pub trait Update: Debug + Clone + Unpin + 'static {
 	const INTERVAL_LENGTH: Duration;
 
-	type Future: Future<Output = ()>;
+	type Future: Future<Output = anyhow::Result<()>>;
 
 	fn update(self) -> Self::Future;
 }
@@ -38,11 +38,24 @@ impl<U: Update> Actor for Updater<U> {
 
 		ctx.run_later(next_interval(U::INTERVAL_LENGTH), move |this, ctx| {
 			log::info!("Starting interval of {:?}", U::INTERVAL_LENGTH);
-			ctx.spawn(this.update.clone().update().into_actor(this));
-			ctx.run_interval(U::INTERVAL_LENGTH, move |this, ctx| {
-				ctx.spawn(this.update.clone().update().into_actor(this));
-			});
+			this.run(ctx);
+			ctx.run_interval(U::INTERVAL_LENGTH, Self::run);
 		});
+	}
+}
+
+impl<U: Update> Updater<U> {
+	fn run(&mut self, ctx: &mut <Self as Actor>::Context) {
+		let update = self.update.clone();
+
+		ctx.spawn(
+			async move {
+				if let Err(e) = update.update().await {
+					log::error!("Error running updater: {:?}", e);
+				}
+			}
+			.into_actor(self),
+		);
 	}
 }
 

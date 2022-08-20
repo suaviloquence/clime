@@ -17,67 +17,63 @@ pub struct ForecastUpdater {
 impl Update for ForecastUpdater {
 	const INTERVAL_LENGTH: Duration = Duration::from_secs(6 * 60 * 60);
 
-	type Future = BoxFuture<'static, ()>;
+	type Future = BoxFuture<'static, anyhow::Result<()>>;
 
 	fn update(self) -> Self::Future {
-		Box::pin(async move {
-			log::info!("Getting universities..");
-			let universities = sqlx::query!(
-				r#"SELECT DISTINCT
+		Box::pin(self.run())
+	}
+}
+
+impl ForecastUpdater {
+	async fn run(self) -> anyhow::Result<()> {
+		log::info!("Getting universities..");
+		let universities = sqlx::query!(
+			r#"SELECT DISTINCT
 					get_weather.university_id,
 					universities.longitude,
 					universities.latitude
 				FROM get_weather INNER JOIN universities
 					ON get_weather.university_id = universities.id"#
-			)
-			.fetch_all(&self.con)
+		)
+		.fetch_all(&self.con)
+		.await
+		.context("Error getting universities to fetch from database.")?;
+
+		let mut trans = self
+			.con
+			.begin()
 			.await
-			.context("Error getting universities to fetch from database.")
-			.unwrap();
+			.context("Error beginning transaction")?;
 
-			let mut trans = self
-				.con
-				.begin()
+		for row in universities {
+			let coords = Coordinates {
+				latitude: row.latitude,
+				longitude: row.longitude,
+			};
+
+			let forecasts = Forecast::fetch(self.client.clone(), row.university_id, &coords, 40)
 				.await
-				.context("Error beginning transaction")
-				.unwrap();
+				.with_context(|| {
+					format!(
+						"Error fetching from openweather API (university {}: ({:.3}, {:.3})",
+						row.university_id, row.latitude, row.longitude
+					)
+				})?;
 
-			for row in universities {
-				let coords = Coordinates {
-					latitude: row.latitude,
-					longitude: row.longitude,
-				};
-
-				let forecasts =
-					Forecast::fetch(self.client.clone(), row.university_id, &coords, 40)
-						.await
-						.with_context(|| {
-							format!(
-							"Error fetching from openweather API (university {}: ({:.3}, {:.3})",
-							row.university_id, row.latitude, row.longitude
-						)
-						})
-						.unwrap();
-
-				for forecast in forecasts {
-					forecast
-						.put(&mut trans)
-						.await
-						.with_context(|| {
-							format!("Error inserting forecast {:?} into database", forecast)
-						})
-						.unwrap();
-				}
-				log::info!("Updated university {}", row.university_id);
+			for forecast in forecasts {
+				forecast.put(&mut trans).await.with_context(|| {
+					format!("Error inserting forecast {:?} into database", forecast)
+				})?;
 			}
+			log::info!("Updated university {}", row.university_id);
+		}
 
-			trans
-				.commit()
-				.await
-				.context("Error committing transaction")
-				.unwrap();
+		trans
+			.commit()
+			.await
+			.context("Error committing transaction")?;
 
-			log::info!("Successfully committed transaction.");
-		})
+		log::info!("Successfully committed transaction.");
+		Ok(())
 	}
 }
