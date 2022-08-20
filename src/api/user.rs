@@ -98,8 +98,10 @@ struct JwtResponse {
 	exp: usize,
 }
 
+const JWT_DURATION: Duration = Duration::days(7);
+
 fn create_jwt(uid: Uuid, key: &EncodingKey) -> Result<impl Responder> {
-	let exp = (Utc::now() + Duration::minutes(3)).timestamp() as usize;
+	let exp = (Utc::now() + JWT_DURATION).timestamp() as usize;
 
 	jsonwebtoken::encode(&HEADER, &Claims { exp, uid }, key)
 		.map_err(ErrorInternalServerError)
