@@ -3,7 +3,7 @@
   - [x] add endpoint to check if username is used already
   - [ ] change password
   - [ ] password resets?
-- [ ] styles
+- [x] styles
 - [ ] deadlines
 - [x] unit preferences
 - [ ] timezone preferences
@@ -53,7 +53,8 @@
   - [ ] get forecast for whole of today even if it's already happened
 - [ ] what was/will be the weather at this point in time
   - if user's time is 5 PST, report weather for new york at 5 EST
-- [ ] cite data sources
+  - not possible w/o more fine-grained (i.e., hourly) forecasts
+- [x] cite data sources
   - https://www.geonames.org/export/ws-overview.html
   - bureau where univ data came from (see dataset folder)
   - openweather api
