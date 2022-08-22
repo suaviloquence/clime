@@ -68,7 +68,11 @@ async fn main() -> anyhow::Result<()> {
 			.app_data(web::Data::new(argon2_config.clone()))
 			.service(web::scope("api").configure(api::configure))
 			.service(Files::new("/static", "./static"))
-			.default_service(web::to(|| NamedFile::open_async("./static/index.html")))
+			.route(
+				"/",
+				web::to(|| NamedFile::open_async("./static/index.html")),
+			)
+			.default_service(web::to(|| NamedFile::open_async("./static/app.html")))
 	})
 	.bind((
 		get_env("IP")?,

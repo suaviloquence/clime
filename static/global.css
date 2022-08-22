@@ -1,0 +1,161 @@
+@font-face {
+  font-family: "Source Sans Pro";
+  src: url("/static/assets/SourceSansPro-Regular.ttf");
+}
+
+:root {
+  --accent: #8f8;
+  --accent-alt: #5d5;
+  --background-base-day: #8af;
+  --background-base-night: #55a;
+  --background-2-day: #79e;
+  --background-2-night: #449;
+  --background-3-day: #68d;
+  --background-3-night: #338;
+  --text-night: #aaa;
+  --text-day: #333;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+body {
+  font-family: "Source Sans Pro", sans-serif;
+  background-color: var(--background-base);
+  color: var(--text);
+}
+
+body {
+  --background-base: var(--background-base-day);
+  --background-2: var(--background-2-day);
+  --background-3: var(--background-3-day);
+  --text: var(--text-day);
+}
+
+body.night {
+  --background-base: var(--background-base-night);
+  --background-2: var(--background-2-night);
+  --background-3: var(--background-3-night);
+  --text: var(--text-night);
+}
+
+text {
+  fill: var(--text);
+}
+
+button,
+input {
+  outline: none;
+  border: none;
+  background-color: var(--accent);
+  padding: 0.3rem;
+  border-radius: 0.3rem;
+  color: var(--text-day);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+:is(button, input):hover {
+  background-color: var(--accent-alt);
+}
+
+a:hover {
+  color: var(--accent-alt);
+}
+
+ul {
+  margin-inline-start: 1rem;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+}
+
+h3 {
+  font-size: 1.25rem;
+}
+
+h4 {
+  font-size: 1.125rem;
+}
+
+section,
+.section {
+  background-color: var(--background-2);
+  padding: 1vmin;
+  border-radius: 1vmin;
+  margin: 1vmin;
+  flex-basis: 100%;
+  flex-grow: 1;
+}
+
+:is(section, .section) :is(section, .section) {
+  background-color: var(--background-3);
+  width: fit-content;
+  padding: 1vmin;
+  border-radius: 1vmin;
+  margin: 1vmin;
+}
+
+:root {
+  font-size: 130%;
+}
+
+#main {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+@media (max-aspect-ratio: 3 / 2) {
+  :root {
+    font-size: 250%;
+  }
+}
+
+@media (min-aspect-ratio: 1 / 1) {
+  :is(section, .section):not(.full-span) {
+    flex-basis: min(34%, 55vh);
+  }
+
+  #main,
+  #footer {
+    width: min(75vw, 110vh);
+    margin-inline: auto;
+  }
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+#spacer {
+  flex-grow: 1;
+}
+
+#footer > section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 0;
+}
+
+input {
+  accent-color: var(--accent);
+}

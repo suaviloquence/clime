@@ -1,5 +1,5 @@
 import { writable, type Writable, type Readable, derived } from "svelte/store";
-import type { JwtInfo, User, UserMetadata } from "./models";
+import type { JwtInfo, User } from "./models";
 
 export const path: Writable<string> = writable(window.location.pathname);
 
@@ -75,3 +75,5 @@ async function fetchUser(jwt: string | null): Promise<User | null> {
 export function updateUser(jwt: string | null) {
   setUser(fetchUser(jwt));
 }
+
+export const isDay = writable<boolean>(true);

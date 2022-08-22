@@ -16,14 +16,20 @@
     });
     $path = "/dashboard";
   }
+
+  document.title = "Add University | Clime";
 </script>
 
-<UniversitySearch let:item={{ name, id }}>
-  {name}:
-  <Link href={`/university/${id}`}>Info</Link>
-  {#await $user then user}
-    <button on:click={() => swap(id)}
-      >{user.universities.includes(id) ? "Remove" : "Add"}</button
-    >
-  {/await}
-</UniversitySearch>
+<section>
+  <UniversitySearch let:item={{ name, id }}>
+    <section>
+      {name}:
+      <Link href={`/university/${id}`}>Info</Link>
+      {#await $user then user}
+        <button on:click={() => swap(id)}
+          >{user.universities.includes(id) ? "Remove" : "Add"}</button
+        >
+      {/await}
+    </section>
+  </UniversitySearch>
+</section>

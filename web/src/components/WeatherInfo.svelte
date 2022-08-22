@@ -1,6 +1,6 @@
 <script context="module" lang="ts">
   import { type Readable, derived } from "svelte/store";
-  import { user } from "../stores";
+  import { isDay, user } from "../stores";
 
   export const units: Readable<"imperial" | "metric"> = derived(
     user,
@@ -51,14 +51,37 @@
   export let weather: Weather;
   export let timezone: string;
   export let expanded = false;
+
+  let date: string;
+  let icon: { src: string; alt: string };
+  let temp: string;
+
+  function update(
+    weather: Weather,
+    timezone: string,
+    isDay: boolean,
+    units: "imperial" | "metric"
+  ) {
+    date = formatDate(weather.time, timezone);
+    icon = {
+      src: `/static/assets/${weather.weather_type}-${
+        isDay ? "day" : "night"
+      }.svg`,
+      alt: weather.weather_description,
+    };
+    temp = convertTemperature(weather.temperature, units);
+  }
+
+  $: update(weather, timezone, $isDay, $units);
 </script>
 
 <Expandable {expanded}>
   <span class="title" slot="title">
-    <slot>
-      {formatDate(weather.time, timezone)}
-    </slot>:
-    {convertTemperature(weather.temperature, $units)}
+    <slot {date} {icon} {temp}>
+      <!-- svelte-ignore a11y-missing-attribute -->
+      <img {...icon} />
+      {date}: {temp}
+    </slot>
   </span>
   <ul slot="content">
     <li>{weather.weather_description}</li>

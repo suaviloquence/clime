@@ -57,15 +57,19 @@
       "/api/user/check?" + new URLSearchParams({ username })
     ).then((res) => res.json());
   }
+
+  $: document.title = `${
+    mode === "create" ? "Create account" : "Log in"
+  } | Clime`;
 </script>
 
-<form on:submit={submit}>
+<form on:submit={submit} class="section full-span" id="login">
   {#if mode === "create"}
-    <div>
+    <section>
       <label for="name">Name: </label>
       <input type="text" bind:value={name} id="name" required />
-    </div>
-    <div>
+    </section>
+    <section>
       Units:
       {#each ["imperial", "metric"] as unit}
         <div>
@@ -79,9 +83,9 @@
           <label for={unit}>{unit}</label>
         </div>
       {/each}
-    </div>
+    </section>
   {/if}
-  <div>
+  <section>
     <label for="username">Username: </label>
     <input
       type="text"
@@ -101,8 +105,8 @@
         {/if}
       {/await}
     {/if}
-  </div>
-  <div>
+  </section>
+  <section>
     <label for="password">Password: </label>
     <input
       type="password"
@@ -111,24 +115,35 @@
       id="password"
       required
     />
-  </div>
+  </section>
 
   {#if error}
-    <p class="error">{error}</p>
+    <section class="error">{error}</section>
   {/if}
 
-  <button type="submit">{mode === "login" ? "Log in" : "Create account"}</button
-  >
+  <section>
+    <button type="submit"
+      >{mode === "login" ? "Log in" : "Create account"}</button
+    >
 
-  <div>
-    Or, <button on:click={swap}
+    , or,
+    <button on:click={swap}
       >{mode === "login" ? "Create account" : "Log in"}</button
     >
-  </div>
+  </section>
 </form>
 
 <style>
   .error {
     color: red;
+  }
+
+  #login {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  #login section {
+    flex-basis: 30%;
   }
 </style>

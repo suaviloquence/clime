@@ -41,31 +41,33 @@
     (await $user).metadata = metadata;
     edit = false;
   }
+
+  document.title = "Settings | Clime";
 </script>
 
 {#await $user}
   Loading user...
 {:then user}
-  Hello, {user.metadata.name}
-
-  <h3>Settings</h3>
-  <div>
+  <section class="full-span">
+    <h3>Settings</h3>
+  </section>
+  <section>
     <label for="username">Username: </label>
     {#if edit}
       <input id="username" required bind:value={metadata.username} />
     {:else}
       <span id="username">{user.metadata.username}</span>
     {/if}
-  </div>
-  <div>
+  </section>
+  <section>
     <label for="name">Name: </label>
     {#if edit}
       <input id="name" bind:value={metadata.name} />
     {:else}
       <span id="name">{user.metadata.name}</span>
     {/if}
-  </div>
-  <div>
+  </section>
+  <section>
     <label for="units">Units: </label>
     {#if edit}
       {#each ["imperial", "metric"] as unit}
@@ -83,14 +85,14 @@
     {:else}
       <span id="units">{user.metadata.units}</span>
     {/if}
-  </div>
+  </section>
   <!-- TODO: timezone -->
-  <div>
+  <section>
     {#if edit}
       <button on:click={update}>Update</button>
       <button on:click={() => (edit = false)}>Cancel</button>
     {:else}
       <button on:click={startEditing}>Edit</button>
     {/if}
-  </div>
+  </section>
 {/await}

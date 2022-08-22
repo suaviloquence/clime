@@ -1,11 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>My App</title>
-		<meta charset="utf-8" />
-	</head>
 
-	<body>
-		<script defer src="/static/app.js"></script>
-	</body>
+<head>
+	<title>Clime</title>
+	<meta charset="utf-8" />
+
+	<link rel="icon" href="/static/favicon.ico" />
+	<link rel="stylesheet" href="/static/reset.css" />
+	<link rel="stylesheet" href="/static/global.css" />
+
+	<style>
+		h3,
+		caption {
+			font-style: italic;
+		}
+
+		#open h1 {
+			height: 100%
+		}
+
+		#open a {
+			color: var(--text-day);
+			padding: 2vmin;
+			border-radius: 2vmin;
+			background-color: var(--accent);
+			cursor: pointer;
+			font-size: 2rem;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="main">
+		<section class="full-span">
+			<h1>Clime</h1>
+			<h3>What's the weather like there?</h3>
+		</section>
+		<section id="open" class="center">
+			<a href="/dashboard" class="button">Open the app</a>
+		</section>
+		<section>
+			<h2>Features</h2>
+			<ul>
+				<li><a href="/university/1">View information and weather of university:</a>
+					<ul>
+						<li>current weather</li>
+						<li>5-day forecast</li>
+						<li>admissions info & statistics</li>
+						<li>institution statistics</li>
+					</ul>
+				</li>
+			</ul>
+		</section>
+		<section>
+			<h2>Features</h2>
+			<ul>
+				<li><a href="/dashboard">User dashboard</a>
+					<ul>
+						<li>Save universities onto your dashboard</li>
+						<li>View all their weathers in one place</li>
+					</ul>
+				</li>
+			</ul>
+		</section>
+		<section>
+			<img style="width: 100%" src="/static/assets/forecast.png" alt="image of a forecast of a university" />
+			<caption>A forecast of a university</caption>
+		</section>
+	</div>
+	<div id="spacer"></div>
+	<div id="footer">
+		<section>
+			<section>
+				<a href="/">Home</a> | <a href="/static/acknowlegements.html">Acknowlegements</a> | <a
+					href="/static/privacy.html">Privacy</a>
+			</section>
+			<span>Clime is free software available under the <a
+					href="https://en.wikipedia.org/wiki/GNU_Affero_General_Public_License" target="_blank">AGPL v3</a> (<a
+					href="https://github.com/suaviloquence/clime" target="_blank">view source</a>)</span>
+		</section>
+	</div>
+</body>
+
 </html>

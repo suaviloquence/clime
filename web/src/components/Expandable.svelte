@@ -15,4 +15,9 @@
   .hide {
     display: none;
   }
+
+  button {
+    width: 1rem;
+    cursor: pointer;
+  }
 </style>

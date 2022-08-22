@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { isDay } from "../stores";
   import type { Forecast } from "../models";
   import {
     convertSpeed,
@@ -8,6 +9,8 @@
 
   export let forecasts: Forecast[];
   export let timezone: string;
+
+  export let updateDay = true;
 
   let buckets = generateBuckets(forecasts);
 
@@ -30,6 +33,14 @@
         buckets.push(bucket);
         bucket = [];
       }
+
+      if (
+        updateDay &&
+        Math.abs(forecast.time - Date.now()) <= 1.5 * 60 * 60 * 1000
+      ) {
+        $isDay = forecast.is_day;
+      }
+
       bucket.push(forecast);
     }
 
@@ -101,10 +112,38 @@
       else detailedView = forecast;
     };
   }
+
+  // reset detailed view on opening another tab
+  $: ((_: number) => (detailedView = null))(open);
 </script>
 
 <div id="forecast">
-  <div id="map">
+  <section id="detailed-view">
+    {#if detailedView}
+      <button on:click={() => (detailedView = null)}>Close</button>
+      <h3>
+        {hourFmt.format(detailedView.time)}: {convertTemperature(
+          detailedView.temperature,
+          $units
+        )}
+      </h3>
+      <ul>
+        <li>{detailedView.weather_description}</li>
+        <li>
+          feels like: {convertTemperature(detailedView.feels_like, $units)}
+        </li>
+        <li>humidity: {detailedView.humidity.toFixed(1)}%</li>
+        <li>pressure: {detailedView.pressure.toFixed(1)} HPa</li>
+        <li>wind speed: {convertSpeed(detailedView.wind_speed, $units)}</li>
+        <li>
+          chance of precipitation: {Math.round(
+            detailedView.precipitation_chance * 100
+          )}%
+        </li>
+      </ul>
+    {/if}
+  </section>
+  <section id="map">
     <div id="day-selection">
       {#each buckets as day, i}
         <button on:click={() => (open = i)} class:selected={open === i}
@@ -213,33 +252,7 @@
         >
       {/each}
     </svg>
-  </div>
-
-  <div id="detailed-view">
-    {#if detailedView}
-      <button on:click={() => (detailedView = null)}>Close</button>
-      <h3>
-        {hourFmt.format(detailedView.time)}: {convertTemperature(
-          detailedView.temperature,
-          $units
-        )}
-      </h3>
-      <ul>
-        <li>{detailedView.weather_description}</li>
-        <li>
-          feels like: {convertTemperature(detailedView.feels_like, $units)}
-        </li>
-        <li>humidity: {detailedView.humidity.toFixed(1)}%</li>
-        <li>pressure: {detailedView.pressure.toFixed(1)} HPa</li>
-        <li>wind speed: {convertSpeed(detailedView.wind_speed, $units)}</li>
-        <li>
-          chance of precipitation: {Math.round(
-            detailedView.precipitation_chance * 100
-          )}%
-        </li>
-      </ul>
-    {/if}
-  </div>
+  </section>
 </div>
 
 <style>
@@ -248,14 +261,18 @@
     stroke: inherit !important;
   }
 
+  text {
+    font-size: 0.5rem;
+  }
+
   use:hover {
-    stroke: #7e7;
+    stroke: var(--accent);
     stroke-width: 20;
   }
 
   .selected {
-    border-color: blue;
-    stroke: #8f8;
+    background: var(--accent-alt);
+    stroke: var(--accent-alt);
     stroke-width: 20;
   }
 
@@ -263,20 +280,35 @@
     display: flex;
     flex-direction: row;
     justify-content: space-around;
+    flex-wrap: wrap;
+  }
+
+  @media (max-aspect-ratio: 1 / 1) {
+    #map {
+      flex-basis: 100%;
+    }
+    #detailed-view {
+      flex-basis: 100%;
+    }
+
+    #day-selection button {
+      font-size: 0.7rem;
+    }
   }
 
   #map {
-    flex-basis: 60%;
+    flex-basis: 70%;
   }
-
   #detailed-view {
-    flex-basis: 30%;
+    flex-basis: 22%;
   }
 
   #day-selection {
     display: flex;
     flex-direction: row;
     justify-content: space-around;
+    gap: 1vmin;
+    flex-wrap: wrap;
   }
 
   .grid {
@@ -285,11 +317,11 @@
   }
 
   .day {
-    fill: #8af;
+    fill: var(--background-base-day);
   }
 
   .night {
-    fill: #55a;
+    fill: var(--background-base-night);
   }
 
   .icon {

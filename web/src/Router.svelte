@@ -3,9 +3,10 @@
   import AddUniversity from "./pages/AddUniversity.svelte";
   import Login from "./pages/Login.svelte";
   import UniversityInfo from "./pages/UniversityInfo.svelte";
-  import UserInfo from "./pages/UserInfo.svelte";
+  import UserInfo from "./pages/Settings.svelte";
   import Dashboard from "./pages/Dashboard.svelte";
   import { path } from "./stores";
+  import Logout from "./pages/Logout.svelte";
 
   /// e.g., set to /app so /home corresponds to example.com/app/home
   const PREFIX = "";
@@ -24,7 +25,8 @@
     },
     "/user/me": UserInfo,
     "/user/(?<mode>(login)|(create))": Login,
-    "/(dashboard)?": Dashboard,
+    "/user/logout": Logout,
+    "/dashboard": Dashboard,
   };
 
   function isOptions(component: Component | Options): component is Options {
@@ -60,6 +62,7 @@
 
         if (component.transform) props = component.transform(props);
 
+        currentComponent = null;
         currentComponent = component.component;
         return;
       }

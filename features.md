@@ -1,3 +1,4 @@
+- [ ] http error handling
 - [x] password authentication
   - [x] add endpoint to check if username is used already
   - [ ] change password
@@ -56,3 +57,4 @@
   - https://www.geonames.org/export/ws-overview.html
   - bureau where univ data came from (see dataset folder)
   - openweather api
+  - fonts

@@ -25,32 +25,48 @@
       }))
     );
   });
+
+  document.title = "Dashboard | Clime";
 </script>
 
 {#await $user}
   Loading dashboard...
 {:then user}
-  <h2>Good morning, {user.metadata.name}</h2>
-  <div>
-    <Link href="/user/me">Settings</Link>
-  </div>
+  <section class="full-span">
+    <h2>Good morning, {user.metadata.name}</h2>
+  </section>
   {#if !universities}
     Loading universities...
   {:else}
-    <ul>
-      <li>
-        <Link href="/university/add">Add</Link>
-      </li>
+    <section id="dashboard" class="full-span">
       {#each universities as university, i}
-        <li>
+        <section class="weather">
           <WeatherInfo
             weather={university.weather}
             timezone={university.timezone}
-            >{university.name}
+            let:icon
+            let:temp
+          >
+            <!-- svelte-ignore a11y-missing-attribute -->
+            <img {...icon} />
+            {university.name}: {temp}
             <Link href={`/university/${university.id}`}>Info</Link>
           </WeatherInfo>
-        </li>
+        </section>
       {/each}
-    </ul>
+      <section class="center">
+        <Link href="/university/add">Add Universities</Link>
+      </section>
+    </section>
   {/if}
 {/await}
+
+<style>
+  #dashboard {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  /* .weather {
+    width: auto;
+  } */
+</style>
