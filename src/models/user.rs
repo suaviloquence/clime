@@ -1,16 +1,17 @@
-use futures_util::future::BoxFuture;
+use futures_util::future;
+
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::db::Pool;
+use crate::db::Executor;
 
-use super::{university::University, Lazy, Load};
+use super::university::University;
 
 #[derive(Debug, Serialize)]
 pub struct User {
 	pub id: Uuid,
 	pub metadata: Metadata,
-	pub universities: Lazy<Vec<University>>,
+	pub universities: Vec<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -50,69 +51,50 @@ pub struct Metadata {
 	pub timezone: Option<i64>,
 }
 
-impl Load for Metadata {
-	type ID = Uuid;
-
-	type Error = sqlx::Error;
-
-	type Connection = Pool;
-
-	fn load(
-		con: Self::Connection,
-		id: Self::ID,
-	) -> BoxFuture<'static, Result<Option<Self>, Self::Error>> {
-		Box::pin(async move {
-			sqlx::query!("SELECT * FROM users WHERE id = $1", id)
-				.fetch_optional(&con)
-				.await
-				.map(|opt| {
-					opt.map(|row| Self {
-						name: row.name,
-						username: row.username,
-						units: row.units.as_str().try_into().unwrap(),
-						timezone: row.timezone,
-					})
+impl Metadata {
+	pub async fn load(con: impl Executor<'_>, id: Uuid) -> sqlx::Result<Option<Self>> {
+		sqlx::query!("SELECT * FROM users WHERE id = $1", id)
+			.fetch_optional(con)
+			.await
+			.map(|opt| {
+				opt.map(|row| Self {
+					name: row.name,
+					username: row.username,
+					units: row.units.as_str().try_into().unwrap(),
+					timezone: row.timezone,
 				})
-		})
-	}
-}
-
-impl Load for User {
-	type Connection = Pool;
-	type ID = Uuid;
-	type Error = sqlx::Error;
-
-	fn load(
-		con: Self::Connection,
-		id: Self::ID,
-	) -> BoxFuture<'static, Result<Option<Self>, Self::Error>> {
-		Box::pin(async move {
-			let metadata = Metadata::load(con.clone(), id).await?;
-
-			if let Some(metadata) = metadata {
-				let universities = sqlx::query!(
-					"SELECT university_id FROM get_weather WHERE user_id = $1",
-					id
-				)
-				.fetch_all(&con)
-				.await?
-				.into_iter()
-				.map(|row| row.university_id)
-				.collect();
-				Ok(Some(Self {
-					id,
-					metadata,
-					universities: Lazy::Lazy(universities),
-				}))
-			} else {
-				Ok(None)
-			}
-		})
+			})
 	}
 }
 
 impl User {
-	pub async fn create(con: Pool, metadata: Metadata) -> sqlx::Result<Self> {
+	pub async fn load(con: impl Executor<'_> + Clone, id: Uuid) -> sqlx::Result<Option<Self>> {
+		let metadata = Metadata::load(con.clone(), id).await?;
+
+		if let Some(metadata) = metadata {
+			let universities = sqlx::query!(
+				"SELECT university_id FROM get_weather WHERE user_id = $1",
+				id
+			)
+			.fetch_all(con)
+			.await?
+			.into_iter()
+			.map(|row| row.university_id)
+			.collect();
+
+			Ok(Some(Self {
+				id,
+				metadata,
+				universities,
+			}))
+		} else {
+			Ok(None)
+		}
+	}
+}
+
+impl User {
+	pub async fn create(con: impl Executor<'_> + Clone, metadata: Metadata) -> sqlx::Result<Self> {
 		let id = Uuid::new_v4();
 
 		let units = metadata.units.as_str();
@@ -124,16 +106,16 @@ impl User {
 			units,
 			metadata.timezone,
 		)
-		.execute(&con)
+		.execute(con)
 		.await
 		.map(|_| Self {
 			id,
 			metadata,
-			universities: Lazy::Lazy(vec![]),
+			universities: vec![],
 		})
 	}
 
-	pub async fn update(&self, con: Pool) -> sqlx::Result<()> {
+	pub async fn update(&self, con: impl Executor<'_>) -> sqlx::Result<()> {
 		let units = self.metadata.units.as_str();
 		sqlx::query!(
 			"UPDATE users SET (name, username, units, timezone) = ($1, $2, $3, $4) WHERE id = $5",
@@ -143,9 +125,22 @@ impl User {
 			self.metadata.timezone,
 			self.id
 		)
-		.execute(&con)
+		.execute(con)
 		.await
 		.map(|_| ())
+	}
+
+	pub async fn load_universities(
+		&self,
+		con: impl Executor<'_> + Clone,
+	) -> sqlx::Result<Option<Vec<University>>> {
+		future::try_join_all(
+			self.universities
+				.iter()
+				.map(|id| University::load(con.clone(), *id)),
+		)
+		.await
+		.map(|universities| universities.into_iter().collect())
 	}
 }
 
@@ -156,34 +151,21 @@ pub struct Authentication {
 	pub salt: Vec<u8>,
 }
 
-impl Load for Authentication {
-	type ID = String;
-
-	type Error = sqlx::Error;
-
-	type Connection = Pool;
-
-	fn load(
-		con: Self::Connection,
-		id: Self::ID,
-	) -> BoxFuture<'static, Result<Option<Self>, Self::Error>> {
-		Box::pin(async move {
-			sqlx::query_as!(Self, "SELECT * FROM authentication WHERE username = $1", id)
-				.fetch_optional(&con)
-				.await
-		})
-	}
-}
-
 impl Authentication {
-	pub async fn put(&self, con: Pool) -> sqlx::Result<()> {
+	pub async fn load(con: impl Executor<'_>, id: &str) -> sqlx::Result<Option<Self>> {
+		sqlx::query_as!(Self, "SELECT * FROM authentication WHERE username = $1", id)
+			.fetch_optional(con)
+			.await
+	}
+
+	pub async fn put(&self, con: impl Executor<'_>) -> sqlx::Result<()> {
 		sqlx::query!(
 			"INSERT INTO authentication (username, hash, salt) VALUES ($1, $2, $3)",
 			self.username,
 			self.hash,
 			self.salt
 		)
-		.execute(&con)
+		.execute(con)
 		.await
 		.map(|_| ())
 	}

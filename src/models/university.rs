@@ -1,9 +1,7 @@
 use openweather_api::Coordinates;
 use serde::Serialize;
 
-use crate::db::{Executor, Pool};
-
-use super::Load;
+use crate::db::Executor;
 
 // #[derive(Debug, Type)]
 // #[repr(u8)]
@@ -63,28 +61,13 @@ pub struct University {
 	pub timezone: String,
 }
 
-impl Load for University {
-	type Connection = Pool;
-	type ID = i64;
-	type Error = sqlx::Error;
-
-	fn load(
-		con: Self::Connection,
-		id: Self::ID,
-	) -> futures_util::future::BoxFuture<'static, Result<Option<Self>, Self::Error>> {
-		Box::pin(async move {
-			sqlx::query_as!(Self, "SELECT * FROM universities WHERE id = $1", id)
-				.fetch_optional(&con)
-				.await
-		})
+impl University {
+	pub async fn load(con: impl Executor<'_>, id: i64) -> sqlx::Result<Option<Self>> {
+		sqlx::query_as!(Self, "SELECT * FROM universities WHERE id = $1", id)
+			.fetch_optional(con)
+			.await
 	}
 
-	// sqlx::query_as!(Self, r#"SELECT * FROM universities WHERE id = $1"#, id)
-	// 	.fetch_optional(con)
-	// 	.await
-}
-
-impl University {
 	pub async fn get_coordinates(
 		con: impl Executor<'_>,
 		id: i64,

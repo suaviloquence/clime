@@ -9,10 +9,7 @@ use rand::Rng;
 
 use crate::{
 	db::Pool,
-	models::{
-		user::{Authentication, Metadata, User},
-		Load,
-	},
+	models::user::{Authentication, Metadata, User},
 };
 use chrono::{Duration, Utc};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
@@ -43,7 +40,7 @@ fn get_uid(req: &HttpRequest) -> Uuid {
 async fn get(con: web::Data<Pool>, req: HttpRequest) -> Result<impl Responder> {
 	let uid = get_uid(&req);
 
-	User::load(Pool::clone(&con), uid)
+	User::load(con.as_ref(), uid)
 		.await
 		.map_err(ErrorInternalServerError)
 		.and_then(|user| user.ok_or_else(|| ErrorUnauthorized("user not found")))
@@ -60,7 +57,7 @@ async fn update(
 	}
 
 	let uid = get_uid(&req);
-	let mut user = User::load(Pool::clone(&con), uid)
+	let mut user = User::load(con.as_ref(), uid)
 		.await
 		.map_err(ErrorInternalServerError)
 		.and_then(|opt| opt.ok_or_else(|| ErrorUnauthorized("user not found")))?;
@@ -80,7 +77,7 @@ async fn update(
 	}
 
 	user.metadata = metadata.0;
-	user.update(Pool::clone(&con))
+	user.update(con.as_ref())
 		.await
 		.map_err(ErrorInternalServerError)
 		.map(|_| HttpResponse::Ok().body(()))
@@ -136,7 +133,7 @@ async fn create(
 		}
 	})?;
 
-	let user = User::create(Pool::clone(&con), data.0.metadata)
+	let user = User::create(con.as_ref(), data.0.metadata)
 		.await
 		.map_err(ErrorInternalServerError)?;
 
@@ -154,7 +151,7 @@ async fn create(
 		hash,
 		salt,
 	}
-	.put(Pool::clone(&con))
+	.put(con.as_ref())
 	.await
 	.map_err(ErrorInternalServerError)?;
 
@@ -177,7 +174,7 @@ async fn login(
 		return Err(ErrorBadRequest("username and password cannot be empty"));
 	}
 
-	Authentication::load(Pool::clone(&con), data.0.username.clone())
+	Authentication::load(con.as_ref(), data.username.as_str())
 		.await
 		.map_err(ErrorInternalServerError)
 		.and_then(|opt| opt.ok_or_else(|| ErrorNotFound("user not found")))
@@ -212,14 +209,13 @@ struct UpdateUniv {
 async fn get_universities(con: web::Data<Pool>, req: HttpRequest) -> Result<impl Responder> {
 	let uid = get_uid(&req);
 
-	let user = User::load(Pool::clone(&con), uid)
+	let user = User::load(con.as_ref(), uid)
 		.await
 		.map_err(ErrorInternalServerError)?
 		.ok_or_else(|| ErrorUnauthorized("user not found"))?;
 
 	let universities = user
-		.universities
-		.load(Pool::clone(&con))
+		.load_universities(con.as_ref())
 		.await
 		.map_err(ErrorInternalServerError)?
 		.ok_or_else(|| ErrorInternalServerError("university not found"))?;

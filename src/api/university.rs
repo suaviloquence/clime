@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
 	db::Pool,
-	models::{forecast::Forecast, university::University, weather::Weather, Load},
+	models::{forecast::Forecast, university::University, weather::Weather},
 };
 
 use super::IntoHttpError;
@@ -19,8 +19,8 @@ pub struct IdParams {
 	id: i64,
 }
 
-async fn get_university(con: &web::Data<Pool>, params: web::Path<IdParams>) -> Result<University> {
-	match University::load(Pool::clone(con), params.id).await {
+async fn get_university(con: &Pool, params: web::Path<IdParams>) -> Result<University> {
+	match University::load(con, params.id).await {
 		Ok(Some(univ)) => Ok(univ),
 		Ok(None) => Err(ErrorNotFound("university not found")),
 		Err(err) => Err(ErrorInternalServerError(err)),
