@@ -33,7 +33,8 @@
   Loading dashboard...
 {:then user}
   <section class="full-span">
-    <h2>Good morning, {user.metadata.name}</h2>
+    <h2>Hello, {user.metadata.username}</h2>
+    <h4 style="font-style: italic">You can do this!</h4>
   </section>
   {#if !universities}
     Loading universities...

@@ -73,7 +73,6 @@ export interface User {
 }
 
 export interface UserMetadata {
-  name: string;
   username: string;
   units: "imperial" | "metric";
   timezone?: number;

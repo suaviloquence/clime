@@ -113,8 +113,7 @@ async fn create(
 	config: web::Data<argon2::Config<'static>>,
 	data: web::Json<Signup>,
 ) -> Result<impl Responder> {
-	if data.metadata.username.is_empty() || data.metadata.name.is_empty() || data.password.len() < 8
-	{
+	if data.metadata.username.is_empty() || data.password.len() < 8 {
 		return Err(ErrorBadRequest("username, name must be at least one character and password mut be at least 8 characters"));
 	}
 

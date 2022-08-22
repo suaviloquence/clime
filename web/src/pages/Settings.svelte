@@ -60,14 +60,6 @@
     {/if}
   </section>
   <section>
-    <label for="name">Name: </label>
-    {#if edit}
-      <input id="name" bind:value={metadata.name} />
-    {:else}
-      <span id="name">{user.metadata.name}</span>
-    {/if}
-  </section>
-  <section>
     <label for="units">Units: </label>
     {#if edit}
       {#each ["imperial", "metric"] as unit}

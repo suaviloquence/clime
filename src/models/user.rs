@@ -45,7 +45,6 @@ impl<'a> TryFrom<&'a str> for Units {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Metadata {
-	pub name: String,
 	pub username: String,
 	pub units: Units,
 	pub timezone: Option<i64>,
@@ -58,7 +57,6 @@ impl Metadata {
 			.await
 			.map(|opt| {
 				opt.map(|row| Self {
-					name: row.name,
 					username: row.username,
 					units: row.units.as_str().try_into().unwrap(),
 					timezone: row.timezone,
@@ -99,9 +97,8 @@ impl User {
 
 		let units = metadata.units.as_str();
 		sqlx::query!(
-			"INSERT INTO users (id, name, username, units, timezone) VALUES ($1, $2, $3, $4, $5)",
+			"INSERT INTO users (id, username, units, timezone) VALUES ($1, $2, $3, $4)",
 			id,
-			metadata.name,
 			metadata.username,
 			units,
 			metadata.timezone,
@@ -118,8 +115,7 @@ impl User {
 	pub async fn update(&self, con: impl Executor<'_>) -> sqlx::Result<()> {
 		let units = self.metadata.units.as_str();
 		sqlx::query!(
-			"UPDATE users SET (name, username, units, timezone) = ($1, $2, $3, $4) WHERE id = $5",
-			self.metadata.name,
+			"UPDATE users SET (username, units, timezone) = ($1, $2, $3) WHERE id = $4",
 			self.metadata.username,
 			units,
 			self.metadata.timezone,
