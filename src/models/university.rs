@@ -1,4 +1,4 @@
-use openweather::Coordinates;
+use openweather_api::Coordinates;
 use serde::Serialize;
 
 use crate::db::{Executor, Pool};

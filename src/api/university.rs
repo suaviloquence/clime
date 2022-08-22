@@ -4,7 +4,7 @@ use actix_web::{
 	HttpResponse, Responder, Result,
 };
 use chrono::Utc;
-use openweather::Client;
+use openweather_api::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::{

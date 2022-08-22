@@ -1,6 +1,6 @@
 use chrono::{naive::serde::ts_milliseconds, NaiveDateTime, Utc};
 use chrono_tz::Tz;
-use openweather::{forecast::PartOfDay, Client, Coordinates};
+use openweather_api::{forecast::PartOfDay, Client, Coordinates};
 use serde::Serialize;
 
 use crate::db::Executor;
@@ -30,7 +30,7 @@ impl Forecast {
 		university_id: i64,
 		coords: &Coordinates,
 		limit: u16,
-	) -> openweather::Result<Vec<Self>> {
+	) -> openweather_api::Result<Vec<Self>> {
 		let fetched_at = Utc::now().naive_utc();
 
 		client.forecast(limit, coords).await.map(|resp| {

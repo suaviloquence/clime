@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use anyhow::Context as _;
-use openweather::{Client, Coordinates};
+use openweather_api::{Client, Coordinates};
 
 use crate::{db::Pool, models::weather::Weather};
 

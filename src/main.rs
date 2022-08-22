@@ -7,7 +7,7 @@ use actix_files::{Files, NamedFile};
 use actix_web::{web, App, HttpServer};
 use anyhow::Context;
 use jsonwebtoken::{DecodingKey, EncodingKey};
-use openweather::Client;
+use openweather_api::Client;
 use workers::{forecast::ForecastUpdater, weather::WeatherUpdater, Updater};
 
 mod api;

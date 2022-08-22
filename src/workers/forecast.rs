@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use anyhow::Context;
 use futures_util::future::BoxFuture;
-use openweather::{Client, Coordinates};
+use openweather_api::{Client, Coordinates};
 
 use crate::{db::Pool, models::forecast::Forecast};
 

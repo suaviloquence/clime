@@ -477,7 +477,7 @@ dependencies = [
  "jsonwebtoken",
  "lazy_static",
  "log",
- "openweather",
+ "openweather-api",
  "rand",
  "reqwest",
  "rust-argon2",
@@ -1352,7 +1352,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "openweather"
+name = "openweather-api"
 version = "0.1.0"
 dependencies = [
  "chrono",

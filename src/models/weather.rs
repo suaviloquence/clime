@@ -1,6 +1,6 @@
 use crate::db::{Executor, Pool};
 use chrono::{naive::serde::ts_milliseconds, NaiveDateTime, Utc};
-use openweather::{Client, Coordinates};
+use openweather_api::{Client, Coordinates};
 use serde::Serialize;
 
 use super::university::University;
@@ -25,7 +25,7 @@ impl Weather {
 		client: &Client,
 		university_id: i64,
 		coords: &Coordinates,
-	) -> openweather::Result<Self> {
+	) -> openweather_api::Result<Self> {
 		client.weather_at(coords).await.map(|weather| {
 			// TODO: i think it's guaranteed that len >= 1, but not sure
 			let main_weather = weather.weather.into_iter().next().unwrap();
@@ -48,7 +48,7 @@ impl Weather {
 	pub async fn fetch_by_university(
 		client: &Client,
 		university: &University,
-	) -> openweather::Result<Self> {
+	) -> openweather_api::Result<Self> {
 		Self::fetch(
 			client,
 			university.id,

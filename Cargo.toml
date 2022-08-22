@@ -30,7 +30,7 @@ uuid = {version = "1.1.2", features = ["v4", "serde"]}
 lazy_static = "1.4.0"
 rust-argon2 = "1.0"
 
-openweather = { path = "./openweather" }
+openweather-api = { path = "./openweather-api" }
 rand = "0.8.5"
 chrono-tz = "0.6.3"
 
@@ -42,5 +42,5 @@ postgres = ["sqlx/postgres"]
 
 [workspace]
 members = [
-	"openweather",
+	"openweather-api",
 ]
