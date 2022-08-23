@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="40"
+   height="40"
+   viewBox="0 0 10.583334 10.583334"
+   version="1.1"
+   id="svg"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   sodipodi:docname="201-"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:document-units="px"
+     showgrid="true"
+     units="px"
+     width="64px"
+     inkscape:zoom="11.901796"
+     inkscape:cx="21.887453"
+     inkscape:cy="7.0157479"
+     inkscape:window-width="1660"
+     inkscape:window-height="1002"
+     inkscape:window-x="1930"
+     inkscape:window-y="38"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     guidecolor="#55ffff"
+     guideopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:deskcolor="#505050">
+    <inkscape:grid
+       type="xygrid"
+       id="grid869"
+       color="#ffffff"
+       opacity="0.13333333"
+       empcolor="#ffffff"
+       empopacity="0.53333333"
+       spacingx="1.0583334"
+       spacingy="1.0583334"
+       empspacing="4"
+       originx="0"
+       originy="0" />
+    <sodipodi:guide
+       position="0,10.583334"
+       orientation="0,40"
+       id="guide134"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="10.583334,10.583334"
+       orientation="40,0"
+       id="guide136"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="10.583334,0"
+       orientation="0,-40"
+       id="guide138"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="0,0"
+       orientation="-40,0"
+       id="guide140"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="rect2545"
+       style="fill:#888888;fill-opacity:1;stroke:none;stroke-width:1.05833;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
+       d="M 5.291667 1.0583334 A 2.1166668 2.1166668 0 0 0 3.1750002 3.1750002 C 2.002368 3.1750002 1.0583334 4.1190348 1.0583334 5.291667 C 1.0583334 6.4642992 2.002368 7.4083338 3.1750002 7.4083338 L 7.4083338 7.4083338 C 8.580966 7.4083338 9.5250006 6.4642992 9.5250006 5.291667 C 9.5250006 4.1190348 8.580966 3.1750002 7.4083338 3.1750002 A 2.1166668 2.1166668 0 0 0 5.291667 1.0583334 z " />
+    <path
+       id="path2763"
+       style="fill:#8888ff;fill-opacity:1;stroke:none;stroke-width:1.05833;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
+       d="M 2.9543901,6.4813568 A 0.5291667,0.5291667 0 0 0 2.3062959,6.8555342 0.5291667,1.8520834 15 0 0 2.1467086,8.4733936 0.5291667,1.8520834 15 0 0 2.6578444,8.610352 0.5291667,1.8520834 15 0 0 3.3285674,7.129451 0.5291667,0.5291667 0 0 0 2.9543901,6.4813568 Z" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#ffff88;stroke-width:0.529167;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+       d="M 5.3142005,5.9749819 4.6988094,6.8334711 5.4037664,7.8169123 4.4483755,9.1497218"
+       id="path22275" />
+    <path
+       id="path23412"
+       style="fill:#8888ff;fill-opacity:1;stroke:none;stroke-width:1.05833;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
+       d="M 7.1877237,6.4813568 A 0.5291667,0.5291667 0 0 0 6.5396295,6.8555342 0.5291667,1.8520834 15 0 0 6.3800422,8.4733936 0.5291667,1.8520834 15 0 0 6.891178,8.610352 0.5291667,1.8520834 15 0 0 7.561901,7.129451 0.5291667,0.5291667 0 0 0 7.1877237,6.4813568 Z" />
+  </g>
+</svg>
