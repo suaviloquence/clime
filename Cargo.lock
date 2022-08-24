@@ -2406,6 +2406,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a89911bd99e5f3659ec4acf9c4d93b0a90fe4a2a11f15328472058edc5261be"
 
 [[package]]
+name = "weather-gov"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "log",
+ "reqwest",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "web-sys"
 version = "0.3.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
