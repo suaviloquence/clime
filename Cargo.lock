@@ -485,6 +485,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "uuid",
+ "weather-gov",
 ]
 
 [[package]]

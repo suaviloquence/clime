@@ -29,60 +29,87 @@ async fn main() -> anyhow::Result<()> {
 	dotenv::dotenv().context("Error loading .env file.")?;
 	env_logger::init();
 
-	let con = db::create(&get_env("DATABASE_URL")?)
-		.await
-		.context("Error connecting to database")?;
+	let client = weather_gov::Client::new(concat!(
+		"clime v",
+		env!("CARGO_PKG_VERSION"),
+		" (s-clime@mcarr.one)"
+	));
 
-	let jwt_secret = get_env("JWT_SECRET")?;
-	let encoder = EncodingKey::from_secret(jwt_secret.as_bytes());
-	let decoder = DecodingKey::from_secret(jwt_secret.as_bytes());
+	let res = client.points(32.877749, -117.235866).await?;
 
-	let client = Client::new(get_env("OPENWEATHER_API_KEY")?, None, None);
+	// println!("{:?}", res);
 
-	let argon2_config = argon2::Config {
-		secret: PASSWORD_SECRET.as_bytes(),
-		..Default::default()
-	};
+	// let forecasts = client.forecast_from_url(res.forecast_hourly).await?;
 
-	Updater::start(WeatherUpdater {
-		con: con.clone(),
-		client: client.clone(),
-	});
+	// println!("{:?}", forecasts);
+	//
 
-	Updater::start(ForecastUpdater {
-		con: con.clone(),
-		client: client.clone(),
-	});
+	let stations = client.stations_by_url(res.observation_stations).await?;
 
-	sqlx::migrate!("./migrations")
-		.run(&con)
-		.await
-		.context("Error running database migrations.")?;
+	// let observation = client.latest_observation(&stations.stations[0].id).await?;
 
-	HttpServer::new(move || {
-		App::new()
-			.app_data(web::Data::new(con.clone()))
-			.app_data(web::Data::new(client.clone()))
-			.app_data(web::Data::new(encoder.clone()))
-			.app_data(web::Data::new(decoder.clone()))
-			.app_data(web::Data::new(argon2_config.clone()))
-			.service(web::scope("api").configure(api::configure))
-			.service(Files::new("/static", "./static"))
-			.route(
-				"/",
-				web::to(|| NamedFile::open_async("./static/index.html")),
-			)
-			.default_service(web::to(|| NamedFile::open_async("./static/app.html")))
-	})
-	.bind((
-		get_env("IP")?,
-		get_env("PORT")?
-			.parse::<u16>()
-			.context("PORT is not a u16")?,
-	))?
-	.workers(2)
-	.run()
-	.await?;
+	// println!("{:?}", observation);
+	//
+
+	let observations = client
+		.observations(stations.station_links[0].as_ref())
+		.await?;
+	println!("{:?}", observations);
+
+	// let con = db::create(&get_env("DATABASE_URL")?)
+	// 	.await
+	// 	.context("Error connecting to database")?;
+
+	// let jwt_secret = get_env("JWT_SECRET")?;
+	// let encoder = EncodingKey::from_secret(jwt_secret.as_bytes());
+	// let decoder = DecodingKey::from_secret(jwt_secret.as_bytes());
+
+	// let client = Client::new(get_env("OPENWEATHER_API_KEY")?, None, None);
+
+	// let argon2_config = argon2::Config {
+	// 	secret: PASSWORD_SECRET.as_bytes(),
+	// 	..Default::default()
+	// };
+
+	// Updater::start(WeatherUpdater {
+	// 	con: con.clone(),
+	// 	client: client.clone(),
+	// });
+
+	// Updater::start(ForecastUpdater {
+	// 	con: con.clone(),
+	// 	client: client.clone(),
+	// });
+
+	// sqlx::migrate!("./migrations")
+	// 	.run(&con)
+	// 	.await
+	// 	.context("Error running database migrations.")?;
+
+	// HttpServer::new(move || {
+	// 	App::new()
+	// 		.app_data(web::Data::new(con.clone()))
+	// 		.app_data(web::Data::new(client.clone()))
+	// 		.app_data(web::Data::new(encoder.clone()))
+	// 		.app_data(web::Data::new(decoder.clone()))
+	// 		.app_data(web::Data::new(argon2_config.clone()))
+	// 		.service(web::scope("api").configure(api::configure))
+	// 		.service(Files::new("/static", "./static"))
+	// 		.route(
+	// 			"/",
+	// 			web::to(|| NamedFile::open_async("./static/index.html")),
+	// 		)
+	// 		.default_service(web::to(|| NamedFile::open_async("./static/app.html")))
+	// })
+	// .bind((
+	// 	get_env("IP")?,
+	// 	get_env("PORT")?
+	// 		.parse::<u16>()
+	// 		.context("PORT is not a u16")?,
+	// ))?
+	// .workers(2)
+	// .run()
+	// .await?;
 
 	Ok(())
 }
